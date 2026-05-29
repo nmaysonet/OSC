@@ -269,9 +269,9 @@
         .repair-class-pill.review { color:#7f1d1d; background:#fee2e2; border:1px solid #fca5a5; }
         .repair-class-pill.excludable { color:#581c87; background:#f3e8ff; border:1px solid #c084fc; }
         .repair-class-actions { display:flex; gap:5px; flex-wrap:wrap; margin-top:2px; }
-        .repair-class-action-btn { border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:4px; padding:3px 6px; font-size:9px; font-weight:900; cursor:pointer; text-transform:uppercase; }
-        .repair-class-action-btn.pending.active { background:#fef3c7; border-color:#f59e0b; color:#92400e; }
-        .repair-class-action-btn.corrected.active { background:#dcfce7; border-color:#22c55e; color:#166534; }
+        .repair-class-toggle { min-width:86px; margin-right:0; padding:4px 7px; border-radius:12px; font-size:10px; font-weight:900; text-transform:uppercase; }
+        .repair-class-toggle.status-pending::before { content:'! '; }
+        .repair-class-toggle.status-dispatched::before { content:'✓ '; }
         .billing-table { table-layout: fixed; min-width: 1320px; }
         .billing-table th, .billing-table td { vertical-align: top; }
         .billing-table .review-col { width: 150px; min-width:150px; }
@@ -4052,6 +4052,71 @@
             return `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum || '')}`;
         }
 
+        function normalizeQueueNameForRepairClass(value) {
+            const s = String(value || '').toUpperCase();
+            if (s.includes('PM')) return 'PM';
+            if (s.includes('ERS') || s.includes('RESCUE') || s.includes('ROAD')) return 'ERS';
+            if (s.includes('VENDED')) return 'VENDED REPAIR';
+            return s || 'VENDED REPAIR';
+        }
+
+        function isRepairClassStatusCleared(safeRo) {
+            const status = getBillingReviewStatusForSafeRo(safeRo);
+            return ['Corrected','Cleared'].includes(status);
+        }
+
+        function getFriendlyRepairClassLabel(recommendedClass, fallback) {
+            const r = String(recommendedClass || '').toUpperCase();
+            if (r.includes('DRIVER')) return 'DRIVER ABUSE REVIEW';
+            if (r.includes('GARDA') || r.includes('ERSA')) return 'GARDA ERSA RECOMMENDATION';
+            if (r.includes('OSC PM') || r === 'PM') return 'OSC PM RECOMMENDATION';
+            if (r.includes('DEF')) return 'DEF MAINT REVIEW';
+            if (r.includes('ACCIDENT')) return 'ACCIDENT DAMAGE REVIEW';
+            if (r.includes('TOW')) return 'TOWING REVIEW';
+            if (r.includes('SPECIAL')) return 'SPECIAL PROJECT REVIEW';
+            if (r.includes('MERCHANT')) return 'MERCHANT PM REVIEW';
+            return fallback || 'REPAIR CLASS REVIEW';
+        }
+
+        function getResponsibleQueueForRecommendation(recommendedClass, queueSource) {
+            const r = String(recommendedClass || '').toUpperCase();
+            if (r.includes('OSC PM') || r === 'PM') return 'PM';
+            if (r.includes('GARDA') || r.includes('ERSA')) return 'ERS';
+            return normalizeQueueNameForRepairClass(queueSource);
+        }
+
+        function determineRecommendedRepairClassFromEvidence(primaryRepClass, combinedText, spend, tireQty, hits) {
+            const current = String(primaryRepClass || '').toUpperCase();
+            const text = String(combinedText || '').toUpperCase();
+            const hasAny = arr => arr.some(x => text.includes(String(x).toUpperCase()));
+            const isAlready = needle => current.includes(needle);
+
+            if (isAlready('MERCHANT')) return null;
+            if (tireQty >= 4 && !isAlready('DEF')) {
+                return { recommendedClass: 'DEF MAINT', reason: `Tire quantity across billed lines is ${tireQty}; 4+ tires should be reviewed as DEF MAINT.` };
+            }
+            if (hasAny(['ACCIDENT','COLLISION','CRASH','STRUCK','IMPACT','DEER','BODY DAMAGE','VANDAL','WINDSHIELD IMPACT']) && !isAlready('ACC')) {
+                return { recommendedClass: 'ACCIDENT DAMAGE', reason: 'Accident/impact/physical damage language supports ACCIDENT DAMAGE review.' };
+            }
+            if (hasAny(['DRIVER ABUSE','DRIVER CAUSED','OPERATOR ERROR','ROAD HAZARD','SIDEWALL','LOCKOUT','LOST KEY','MISFUEL','DEF IN FUEL','FUEL CONTAMINATION','OUT OF FUEL','REGEN','DERATE']) && !isAlready('ABUSE')) {
+                return { recommendedClass: 'DRIVER ABUSE', reason: 'Driver-caused indicators support DRIVER ABUSE review.' };
+            }
+            if (hasAny(['SAMSARA','CAMERA INSTALL','TELEMATICS INSTALL','RETROFIT','UPFIT']) && !isAlready('SPECIAL')) {
+                return { recommendedClass: 'SPECIAL PROJ', reason: 'Project/install language supports SPECIAL PROJ review.' };
+            }
+            if (hasAny(['ROAD CALL','ROADSIDE','EMERGENCY','BREAKDOWN','NO START','UNIT DOWN','MOBILE RESCUE']) && !(isAlready('ERSA') || current.includes('ROAD CALL'))) {
+                return { recommendedClass: 'GARDA ERSA', reason: 'Roadside/emergency language supports GARDA ERSA review.' };
+            }
+            if (hasAny(['TOW','TOWED','TOWING','WRECKER','ROLLBACK','WINCH','RECOVERY']) && !(isAlready('TOW') || isAlready('ERSA'))) {
+                return { recommendedClass: 'TOWING', reason: 'Tow/wrecker/recovery language supports TOWING review unless this was emergency roadside.' };
+            }
+            const major = hits.majorHits && hits.majorHits.length;
+            if ((major || (current.includes('DEF') && spend > 1500)) && !isAlready('DEF')) {
+                return { recommendedClass: 'DEF MAINT', reason: `Major repair evidence (${(hits.majorHits || []).slice(0,4).join(', ') || 'high-dollar major repair'}) supports DEF MAINT review.` };
+            }
+            return null;
+        }
+
         function processAgingRepairsData(agingRawAOA) {
             globalBillingRows = [];
             globalBillingIssueMap = {};
@@ -4161,40 +4226,52 @@
                 const flags = [];
                 const reasons = [];
                 const suggested = new Set();
+                let recommendedClass = '';
+                let responsibleQueue = normalizeQueueNameForRepairClass(queueSource);
 
-                if (queueSource === 'PM' && repService !== 'PM') {
-                    flags.push('REP CLASS REVIEW'); suggested.add('PM');
-                    reasons.push(`Queue is PM but REPCLASS is ${primaryRepClass || 'blank'}.`);
+                const explicitRecommendation = determineRecommendedRepairClassFromEvidence(primaryRepClass, combinedText, spend, g.tireQty, { majorHits });
+                if (explicitRecommendation) {
+                    recommendedClass = explicitRecommendation.recommendedClass;
+                    responsibleQueue = getResponsibleQueueForRecommendation(recommendedClass, queueSource);
+                    const label = getFriendlyRepairClassLabel(recommendedClass, 'REPAIR CLASS REVIEW');
+                    flags.push(label);
+                    suggested.add(recommendedClass);
+                    reasons.push(explicitRecommendation.reason);
                 }
-                if (queueSource === 'ERS' && repService !== 'ERS') {
-                    flags.push('REP CLASS REVIEW'); suggested.add('ERS');
-                    reasons.push(`Queue is ERS but REPCLASS is ${primaryRepClass || 'blank'}.`);
+
+                if (!recommendedClass && queueSource === 'PM' && repService !== 'PM') {
+                    recommendedClass = 'OSC PM';
+                    responsibleQueue = 'PM';
+                    flags.push(getFriendlyRepairClassLabel(recommendedClass));
+                    suggested.add(recommendedClass);
+                    reasons.push(`This RO is in the PM queue but current REPCLASS is ${primaryRepClass || 'blank'}.`);
                 }
-                if (queueSource === 'VENDED REPAIR' && (repService === 'PM' || repService === 'ERS')) {
-                    flags.push('REP CLASS REVIEW'); suggested.add(repService);
-                    reasons.push(`Vended queue but REPCLASS maps to ${repService}.`);
+                if (!recommendedClass && queueSource === 'ERS' && repService !== 'ERS') {
+                    recommendedClass = 'GARDA ERSA';
+                    responsibleQueue = 'ERS';
+                    flags.push(getFriendlyRepairClassLabel(recommendedClass));
+                    suggested.add(recommendedClass);
+                    reasons.push(`This RO is in the ERS queue but current REPCLASS is ${primaryRepClass || 'blank'}.`);
                 }
-                if (hasExplicitPmSignal && repService !== 'PM' && !hasMajorRepairSignal) {
-                    flags.push('PM REVIEW'); suggested.add('PM');
+
+                if (!recommendedClass && hasExplicitPmSignal && repService !== 'PM' && !hasMajorRepairSignal) {
+                    recommendedClass = 'OSC PM';
+                    responsibleQueue = 'PM';
+                    flags.push(getFriendlyRepairClassLabel(recommendedClass));
+                    suggested.add(recommendedClass);
                     const hits = explicitPmHits.length ? explicitPmHits : ['PM'];
                     reasons.push(`Explicit PM signal(s): ${hits.slice(0, 4).join(', ')}.`);
                 } else if (hasExplicitPmSignal && repService !== 'PM' && hasMajorRepairSignal) {
-                    flags.push('EXCLUDABLE REVIEW'); suggested.add('Major Repair / Current REPCLASS Review');
-                    reasons.push(`PM-related work appears to be accompanied by major repair evidence (${majorHits.slice(0, 4).join(', ') || 'high-dollar DEF MAINT'}); do not suggest PM automatically.`);
+                    // PM-like work can occur as part of a major repair. Do not recommend PM when major repair evidence is present.
+                    if (!String(primaryRepClass).toUpperCase().match(/DEF|ABUSE|ACC|TOW|ERSA|SPECIAL|MERCHANT/)) {
+                        recommendedClass = 'DEF MAINT';
+                        responsibleQueue = normalizeQueueNameForRepairClass(queueSource);
+                        flags.push(getFriendlyRepairClassLabel(recommendedClass));
+                        suggested.add(recommendedClass);
+                        reasons.push(`PM-related work appears to be part of a major repair (${majorHits.slice(0, 4).join(', ') || 'high-dollar repair'}); classify based on the major repair, not the PM line.`);
+                    }
                 } else if (weakPmHits.length && repService !== 'PM') {
-                    // weak PM words are retained only as supporting context and do not create a PM suggestion
-                }
-                if (ersHits.length && repService !== 'ERS') {
-                    flags.push('ERS REVIEW'); suggested.add('ERS');
-                    reasons.push(`ERS keyword(s): ${ersHits.slice(0, 4).join(', ')}.`);
-                }
-                if (exHits.length && !String(primaryRepClass).toUpperCase().match(/DEF|ABUSE|ACC|TOW|ERSA|SPECIAL|MERCHANT/)) {
-                    flags.push('EXCLUDABLE REVIEW'); suggested.add('Excludable / Special Review');
-                    reasons.push(`Excludable keyword(s): ${exHits.slice(0, 5).join(', ')}.`);
-                }
-                if (g.tireQty >= 4 && !String(primaryRepClass).toUpperCase().includes('DEF')) {
-                    flags.push('4+ TIRES'); suggested.add('DEF MAINT Review');
-                    reasons.push(`Tire quantity across billed lines is ${g.tireQty}; SOP calls out 4+ tires for deferred maintenance review.`);
+                    // Weak words like filter/oil/service are supporting context only and never create a PM recommendation alone.
                 }
                 const uniqueFlags = Array.from(new Set(flags));
                 if (!uniqueFlags.length) return;
@@ -4210,6 +4287,8 @@
                     currentStatus,
                     repClass: repClassList.join(', '),
                     suggestedService: Array.from(suggested).join(', ') || 'Review',
+                    recommendedClass: recommendedClass || Array.from(suggested)[0] || 'Review',
+                    responsibleQueue: responsibleQueue || normalizeQueueNameForRepairClass(queueSource),
                     spend,
                     flags: uniqueFlags,
                     reasons,
@@ -4239,35 +4318,42 @@
             if (!issue) return '';
             return issue.flags.slice(0, 2).map(flag => {
                 let cls = 'billing-review';
-                if (flag.includes('REP') || flag.includes('PM') || flag.includes('ERS')) cls = 'repclass-review';
-                if (flag.includes('EXCLUDABLE') || flag.includes('4+')) cls = 'excludable-review';
+                if (flag.includes('REP') || flag.includes('PM') || flag.includes('GARDA')) cls = 'repclass-review';
+                if (flag.includes('DEF') || flag.includes('DRIVER') || flag.includes('ACCIDENT') || flag.includes('TOWING') || flag.includes('SPECIAL') || flag.includes('MERCHANT') || flag.includes('4+')) cls = 'excludable-review';
                 return `<span class="billing-badge ${cls}" title="${escapeHtml(issue.reasons.join(' ')).replace(/"/g, '&quot;')}">${escapeHtml(flag)}</span>`;
             }).join(' ');
         }
 
 
-        function getRepairClassCellHtml(roNum) {
-            const issue = getBillingIssueForRo(roNum);
+        function getRepairClassCellHtml(roOrNum) {
+            const roObj = typeof roOrNum === 'object' ? roOrNum : null;
+            const roNum = roObj ? roObj.roNum : roOrNum;
+            const issue = roObj ? getVisibleBillingIssueForRo(roObj) : getBillingIssueForRo(roNum);
             if (!issue) return `<div class="repair-class-cell"><span class="repair-class-pill clean">OK</span></div>`;
             const safeRo = issue.safeRo || safeFirebaseKey(roNum);
             const reviewStatus = getBillingReviewStatusForSafeRo(safeRo);
-            const primaryFlag = (issue.flags || [])[0] || 'REVIEW';
-            const cls = primaryFlag.includes('EXCLUDABLE') || primaryFlag.includes('4+') ? 'excludable' : 'review';
-            const title = escapeHtml((issue.reasons || []).join(' ')).replace(/"/g, '&quot;');
-            const correctedActive = ['Corrected','Cleared'].includes(reviewStatus) ? ' active' : '';
-            const pendingActive = !['Corrected','Cleared'].includes(reviewStatus) ? ' active' : '';
+            const label = getFriendlyRepairClassLabel(issue.recommendedClass || issue.suggestedService, 'REPAIR CLASS REVIEW');
+            const cls = label.includes('DEF') || label.includes('DRIVER') || label.includes('ACCIDENT') || label.includes('TOWING') || label.includes('SPECIAL') || label.includes('MERCHANT') ? 'excludable' : 'review';
+            const reasonText = `${label}. Current repair class: ${issue.repClass || 'blank'}. Recommended: ${issue.recommendedClass || issue.suggestedService || 'Review'}. ${(issue.reasons || []).join(' ')}`;
+            const title = escapeHtml(reasonText).replace(/"/g, '&quot;');
+            const isCorrected = ['Corrected','Cleared'].includes(reviewStatus);
             return `<div class="repair-class-cell" title="${title}">
                 <div class="repair-class-name">${escapeHtml(issue.repClass || 'Review')}</div>
-                <span class="repair-class-pill ${cls}">${escapeHtml(primaryFlag)}</span>
+                <span class="repair-class-pill ${cls}">${escapeHtml(label)}</span>
                 <div class="repair-class-actions">
-                    <button class="repair-class-action-btn pending${pendingActive}" onclick="setRepairClassReviewStatus('${safeRo}', 'Open'); event.stopPropagation();">Pending</button>
-                    <button class="repair-class-action-btn corrected${correctedActive}" onclick="setRepairClassReviewStatus('${safeRo}', 'Corrected'); event.stopPropagation();">Corrected</button>
+                    <span class="status-toggle repair-class-toggle ${isCorrected ? 'status-dispatched' : 'status-pending'}" onclick="toggleRepairClassCorrected('${safeRo}'); event.stopPropagation();">${isCorrected ? 'CORRECTED' : 'PENDING'}</span>
                 </div>
             </div>`;
         }
 
         function setRepairClassReviewStatus(safeRo, status) {
             updateBillingReviewStatus(safeRo, status);
+        }
+
+        function toggleRepairClassCorrected(safeRo) {
+            const current = getBillingReviewStatusForSafeRo(safeRo);
+            const next = ['Corrected','Cleared'].includes(current) ? 'Open' : 'Corrected';
+            updateBillingReviewStatus(safeRo, next);
         }
 
         function getBillingReviewStatusForSafeRo(safeRo) {
@@ -4277,13 +4363,32 @@
 
         function getBillingIssueForRo(roNum) {
             if (!roNum) return null;
-            return globalBillingIssueMap && globalBillingIssueMap[safeFirebaseKey(roNum)] ? globalBillingIssueMap[safeFirebaseKey(roNum)] : null;
+            const safeRo = safeFirebaseKey(roNum);
+            if (isRepairClassStatusCleared(safeRo)) return null;
+            return globalBillingIssueMap && globalBillingIssueMap[safeRo] ? globalBillingIssueMap[safeRo] : null;
+        }
+
+        function isRepairClassIssueVisibleForRo(ro, issue) {
+            if (!ro || !issue) return false;
+            if (isRepairClassStatusCleared(issue.safeRo)) return false;
+            const roQueue = normalizeQueueNameForRepairClass(ro.sourceQueue || issue.queueSource || 'VENDED REPAIR');
+            const responsible = normalizeQueueNameForRepairClass(issue.responsibleQueue || issue.queueSource || roQueue);
+
+            // PM/ERS records can appear in vended drilldowns as FYI. Do not make vended coordinators own those repair-class corrections.
+            if (roQueue !== responsible) return false;
+            return true;
+        }
+
+        function getVisibleBillingIssueForRo(ro) {
+            if (!ro || !ro.roNum) return null;
+            const issue = getBillingIssueForRo(ro.roNum);
+            return isRepairClassIssueVisibleForRo(ro, issue) ? issue : null;
         }
 
         function getBillingIssuePopulation(dataSet) {
             return (dataSet || [])
-                .filter(ro => isRealOpenRoForDailyCompliance(ro))
-                .map(ro => getBillingIssueForRo(ro.roNum))
+                .filter(ro => (isRealOpenRoForDailyCompliance(ro) || (ro && normalizeSpendStatus(ro.status) === 'CLOSED')))
+                .map(ro => getVisibleBillingIssueForRo(ro))
                 .filter(Boolean);
         }
 
@@ -4340,12 +4445,12 @@
             const kpi = document.getElementById('billing-kpi-strip');
             if (!body) return;
             const search = (document.getElementById('billing-search')?.value || '').toLowerCase().trim();
-            let rows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
+            let rows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) })).filter(r => !['Corrected','Cleared'].includes(r.reviewStatus));
             if (search) {
                 rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
             }
 
-            const allBillingRowsWithStatus = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
+            const allBillingRowsWithStatus = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) })).filter(r => !['Corrected','Cleared'].includes(r.reviewStatus));
             const total = allBillingRowsWithStatus.length;
             const open = allBillingRowsWithStatus.filter(r => (r.reviewStatus || 'Open') === 'Open').length;
             const rep = allBillingRowsWithStatus.filter(r => r.flags.some(f => f.includes('REP') || f.includes('PM') || f.includes('ERS'))).length;
@@ -4355,7 +4460,7 @@
                     <div class="billing-kpi"><div class="label">Billing Flags</div><div class="value">${total}</div></div>
                     <div class="billing-kpi"><div class="label">Open Review</div><div class="value">${open}</div></div>
                     <div class="billing-kpi"><div class="label">Rep Class Risk</div><div class="value">${rep}</div></div>
-                    <div class="billing-kpi"><div class="label">Excludable / Tire Review</div><div class="value">${ex}</div></div>`;
+                    <div class="billing-kpi"><div class="label">Budget Class Review</div><div class="value">${ex}</div></div>`;
             }
 
             if (!globalBillingRows.length) {
@@ -4367,7 +4472,7 @@
                 return;
             }
             body.innerHTML = rows.map(r => {
-                const flagHtml = r.flags.map(flag => `<span class="billing-badge ${flag.includes('EXCLUDABLE') || flag.includes('4+') ? 'excludable-review' : flag.includes('REP') || flag.includes('PM') || flag.includes('ERS') ? 'repclass-review' : 'billing-review'}">${escapeHtml(flag)}</span>`).join(' ');
+                const flagHtml = r.flags.map(flag => `<span class="billing-badge ${flag.includes('DEF') || flag.includes('DRIVER') || flag.includes('ACCIDENT') || flag.includes('TOWING') || flag.includes('SPECIAL') || flag.includes('MERCHANT') || flag.includes('4+') ? 'excludable-review' : flag.includes('REP') || flag.includes('PM') || flag.includes('GARDA') ? 'repclass-review' : 'billing-review'}">${escapeHtml(flag)}</span>`).join(' ');
                 const reasons = r.reasons.map(x => `<div>• ${escapeHtml(x)}</div>`).join('');
                 const noteBtn = `<button class="${roHasMeaningfulNote(r.safeRo) ? 'note-btn has-note' : 'note-btn'}" onclick="openNoteModal('${r.safeRo}', '${escapeHtml(r.roNumber)}')" title="Billing review note">📝</button>`;
                 return `<tr>
@@ -4376,7 +4481,7 @@
                     <td><strong>${escapeHtml(r.branch || 'Unknown')}</strong><br><span style="font-size:10px;color:#64748b;font-weight:800;">${escapeHtml(r.queueSource || '')}</span></td>
                     <td>${escapeHtml(r.currentStatus || '')}</td>
                     <td>${escapeHtml(r.repClass || '')}</td>
-                    <td>${escapeHtml(r.suggestedService || '')}</td>
+                    <td>${escapeHtml(r.recommendedClass || r.suggestedService || '')}</td>
                     <td style="text-align:right; font-weight:800;">${formatCurrency(r.spend || 0)}</td>
                     <td>${flagHtml}</td>
                     <td class="billing-reasons">${reasons}<div style="margin-top:5px;color:#64748b;">Lines reviewed: ${r.lineCount}${r.tireQty ? ` · Tire qty: ${r.tireQty}` : ''}</div></td>
@@ -4395,7 +4500,7 @@
                 'Queue Source': r.queueSource,
                 'Current Status': r.currentStatus,
                 'Rep Class': r.repClass,
-                'Suggested Service Type': r.suggestedService,
+                'Recommended Repair Class': r.recommendedClass || r.suggestedService,
                 'Spend': r.spend,
                 'Flags': r.flags.join('; '),
                 'Why Flagged': r.reasons.join(' | '),
@@ -5714,13 +5819,10 @@
             });
 
             const completedRepairClassReviewData = ownerDataAll
-                .filter(ro => ro && !ro.isOpen && normalizeSpendStatus(ro.status) === 'CLOSED' && getBillingIssueForRo(ro.roNum))
+                .filter(ro => ro && !ro.isOpen && normalizeSpendStatus(ro.status) === 'CLOSED' && getVisibleBillingIssueForRo(ro))
                 .map(ro => Object.assign({}, ro, {
                     isRepairClassCompletedReview: true,
-                    isOpen: true,
-                    drillTopLevel: 'Completed Repair Class Review',
-                    subregion: ro.subregion || 'Completed Repair Class Review',
-                    branch: ro.branch || 'Completed Repair Class Review'
+                    isOpen: true
                 }));
 
             baseOpenData = baseOpenData.concat(completedRepairClassReviewData);
@@ -5914,7 +6016,7 @@
                             unitsMap[ro.unitNo].openedDates.push(ro.openedFormatted);
                             unitsMap[ro.unitNo].statuses.push(ro.status);
                             unitsMap[ro.unitNo].ecdCells.push(ecdCell);
-                            unitsMap[ro.unitNo].repairClassCells.push(getRepairClassCellHtml(ro.roNum));
+                            unitsMap[ro.unitNo].repairClassCells.push(getRepairClassCellHtml(ro));
                             unitsMap[ro.unitNo].completedRepairClassReviewFlags.push(!!ro.isRepairClassCompletedReview);
                         });
 
