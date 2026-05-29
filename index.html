@@ -357,11 +357,11 @@
             <div class="menu-item" id="menu-vended" onclick="navigate('vended-view', this)">Vended Repair Queue</div>
             <div class="menu-item" id="menu-pm" onclick="navigate('pm-view', this)">PM Queue</div>
             <div class="menu-item" id="menu-ers" onclick="navigate('ers-view', this)">ERS Queue</div>
+            <div class="menu-item" id="menu-billing" onclick="navigate('billing-view', this)">Billing Queue</div>
         </div>
         <div class="menu-item" onclick="window.location.href='vendor.html'">Vendor Search</div>
         <div class="menu-item" id="menu-spend" onclick="navigate('spend-view', this)">Weekly Spend Matrix</div>
         <div class="menu-item" id="menu-summary" onclick="navigate('summary-view', this)">Consolidation Summary</div>
-        <div class="menu-item" id="menu-billing" onclick="navigate('billing-view', this)">Billing Queue</div>
         
         <div class="sidebar-truck">
             <svg width="140" height="70" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg" class="moving-truck-svg">
@@ -653,14 +653,9 @@
             </div>
             <div class="billing-kpi-strip" id="billing-kpi-strip"></div>
             <div class="filter-bar" style="align-items:center;">
-                <button class="billing-filter-pill active" data-billing-filter="ALL" onclick="setBillingFilter('ALL', this)">All Flags</button>
-                <button class="billing-filter-pill" data-billing-filter="REPCLASS" onclick="setBillingFilter('REPCLASS', this)">Rep Class Review</button>
-                <button class="billing-filter-pill" data-billing-filter="PM" onclick="setBillingFilter('PM', this)">PM Risk</button>
-                <button class="billing-filter-pill" data-billing-filter="ERS" onclick="setBillingFilter('ERS', this)">ERS Risk</button>
-                <button class="billing-filter-pill" data-billing-filter="EXCLUDABLE" onclick="setBillingFilter('EXCLUDABLE', this)">Excludable Review</button>
-                <button class="billing-filter-pill" data-billing-filter="TIRE" onclick="setBillingFilter('TIRE', this)">4+ Tires</button>
-                <button class="billing-filter-pill" data-billing-filter="OPEN" onclick="setBillingFilter('OPEN', this)">Open Review</button>
-                <input id="billing-search" class="filter-select" style="max-width:320px;" placeholder="Search RO, unit, branch, rep class..." oninput="renderBillingQueue()">
+                <input id="billing-search" class="filter-select" style="max-width:420px;" placeholder="Search RO, unit, branch, rep class, flag..." oninput="renderBillingQueue()">
+                <button class="filter-btn" onclick="loadAgingRepairsFromFirebase(true)">Reload Aging Repairs</button>
+                <span id="billing-load-status" style="font-size:12px; color:#64748b; font-weight:800;"></span>
             </div>
             <div class="drilldown-container table-wrapper">
                 <table class="billing-table">
@@ -955,6 +950,11 @@
         }
 
         async function loadAgingRepairsFromFirebase(showWarnings = false) {
+            const statusEl = document.getElementById('billing-load-status');
+            if (statusEl) {
+                statusEl.innerText = 'Loading Aging Repairs.xlsx...';
+                statusEl.style.color = '#64748b';
+            }
             try {
                 const data = await fetchAgingRepairsBuffer();
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -966,11 +966,20 @@
                     if (name.includes('aging') || name.includes('repair')) selectedAoa = aoa;
                 });
                 processAgingRepairsData(selectedAoa || []);
+                if (statusEl) {
+                    statusEl.innerText = `Loaded ${globalBillingRows.length} billing exception${globalBillingRows.length === 1 ? '' : 's'}.`;
+                    statusEl.style.color = '#15803d';
+                }
+                refreshActiveViewPreservingDrilldown();
                 return true;
             } catch (err) {
                 if (showWarnings) console.warn('Aging Repairs billing queue source not loaded:', err);
                 globalBillingRows = [];
                 globalBillingIssueMap = {};
+                if (statusEl) {
+                    statusEl.innerText = `Aging Repairs.xlsx not loaded: ${err.message || err}`;
+                    statusEl.style.color = '#dc2626';
+                }
                 renderBillingQueue();
                 return false;
             }
@@ -1061,6 +1070,12 @@
                     console.warn('Spend governor Firebase sync failed:', syncError);
                 }
 
+                try {
+                    await loadAgingRepairsFromFirebase(true);
+                } catch (billingLoadError) {
+                    console.warn('Aging Repairs billing load failed:', billingLoadError);
+                }
+
                 statusEl.innerText = 'Dashboard loaded.';
                 statusEl.style.color = '#2e7d32';
                 setTimeout(applyExternalNavigationRequest, 0);
@@ -1140,6 +1155,12 @@
                     await syncSpendGovernorWithFirebase();
                 } catch (syncError) {
                     console.warn('Spend governor Firebase sync failed:', syncError);
+                }
+
+                try {
+                    await loadAgingRepairsFromFirebase(true);
+                } catch (billingLoadError) {
+                    console.warn('Aging Repairs billing load failed:', billingLoadError);
                 }
 
                 statusEl.innerText = `Loaded ${file.name}`;
@@ -4184,6 +4205,50 @@
             }).join(' ');
         }
 
+        function getBillingReviewStatusForSafeRo(safeRo) {
+            const review = globalBillingReviewState && globalBillingReviewState[safeRo] ? globalBillingReviewState[safeRo] : {};
+            return review.status || 'Open';
+        }
+
+        function getBillingIssueForRo(roNum) {
+            if (!roNum) return null;
+            return globalBillingIssueMap && globalBillingIssueMap[safeFirebaseKey(roNum)] ? globalBillingIssueMap[safeFirebaseKey(roNum)] : null;
+        }
+
+        function getBillingIssuePopulation(dataSet) {
+            return (dataSet || [])
+                .filter(ro => isRealOpenRoForDailyCompliance(ro))
+                .map(ro => getBillingIssueForRo(ro.roNum))
+                .filter(Boolean);
+        }
+
+        function generateBillingComplianceHtml(dataSet) {
+            const issues = getBillingIssuePopulation(dataSet);
+            if (!issues.length) return '';
+            const openIssues = issues.filter(issue => getBillingReviewStatusForSafeRo(issue.safeRo) === 'Open');
+            const touchedToday = issues.filter(issue => roTouchedToday(issue.safeRo)).length;
+            const reviewedOrTouched = issues.length - openIssues.length + openIssues.filter(issue => roTouchedToday(issue.safeRo)).length;
+            const pct = issues.length ? Math.round((reviewedOrTouched / issues.length) * 100) : 100;
+            const cls = pct >= 85 ? 'compliance-green' : (pct >= 70 ? 'compliance-yellow' : 'compliance-red');
+            const rating = pct >= 85 ? 'ON TRACK' : (pct >= 70 ? 'WATCH' : 'NEEDS ACTION');
+            return `
+                <div class="workflow-compliance-card ${cls} compact" title="Billing / REPCLASS issue compliance is based on flagged open VROs from Aging Repairs.xlsx. Coordinators should update, review, correct, or escalate these daily.">
+                    <div class="workflow-compliance-header">
+                        <div>
+                            <div class="workflow-compliance-label">Billing / REPCLASS Compliance</div>
+                            <div class="workflow-compliance-score">${pct}%</div>
+                        </div>
+                        <div class="workflow-compliance-rating">${rating}</div>
+                    </div>
+                    <div class="workflow-compliance-grid">
+                        <div class="workflow-compliance-mini"><div class="mini-title">Flagged</div><div class="mini-num">${issues.length}</div></div>
+                        <div class="workflow-compliance-mini"><div class="mini-title">Touched</div><div class="mini-num">${touchedToday}/${issues.length}</div></div>
+                        <div class="workflow-compliance-mini"><div class="mini-title">Open</div><div class="mini-num">${openIssues.length}</div></div>
+                        <div class="workflow-compliance-mini"><div class="mini-title">Cleared</div><div class="mini-num">${issues.length - openIssues.length}</div></div>
+                    </div>
+                </div>`;
+        }
+
         function setBillingFilter(val, btn) {
             currentBillingFilter = val || 'ALL';
             document.querySelectorAll('.billing-filter-pill').forEach(b => b.classList.remove('active'));
@@ -4210,19 +4275,16 @@
             const kpi = document.getElementById('billing-kpi-strip');
             if (!body) return;
             const search = (document.getElementById('billing-search')?.value || '').toLowerCase().trim();
-            let rows = (globalBillingRows || []).slice();
-            if (currentBillingFilter && currentBillingFilter !== 'ALL') {
-                if (currentBillingFilter === 'OPEN') rows = rows.filter(r => (r.reviewStatus || 'Open') === 'Open');
-                else rows = rows.filter(r => r.flags.some(f => f.toUpperCase().includes(currentBillingFilter)) || String(r.suggestedService || '').toUpperCase().includes(currentBillingFilter));
-            }
+            let rows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
             if (search) {
                 rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
             }
 
-            const total = globalBillingRows.length;
-            const open = globalBillingRows.filter(r => (r.reviewStatus || 'Open') === 'Open').length;
-            const rep = globalBillingRows.filter(r => r.flags.some(f => f.includes('REP') || f.includes('PM') || f.includes('ERS'))).length;
-            const ex = globalBillingRows.filter(r => r.flags.some(f => f.includes('EXCLUDABLE') || f.includes('4+'))).length;
+            const allBillingRowsWithStatus = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
+            const total = allBillingRowsWithStatus.length;
+            const open = allBillingRowsWithStatus.filter(r => (r.reviewStatus || 'Open') === 'Open').length;
+            const rep = allBillingRowsWithStatus.filter(r => r.flags.some(f => f.includes('REP') || f.includes('PM') || f.includes('ERS'))).length;
+            const ex = allBillingRowsWithStatus.filter(r => r.flags.some(f => f.includes('EXCLUDABLE') || f.includes('4+'))).length;
             if (kpi) {
                 kpi.innerHTML = `
                     <div class="billing-kpi"><div class="label">Billing Flags</div><div class="value">${total}</div></div>
@@ -5436,6 +5498,7 @@
             }
 
             let workflowComplianceHtml = chartId ? '' : generateWorkflowComplianceHtml(filteredOpen);
+            let billingComplianceHtml = chartId ? '' : generateBillingComplianceHtml(filteredOpen);
 
             let innerHtml = `
                 <div class="kpi-name">${name}</div>
@@ -5466,6 +5529,7 @@
                     </div>
                 </div>
                 ${workflowComplianceHtml}
+                ${billingComplianceHtml}
             `;
             return innerHtml;
         }
