@@ -648,9 +648,6 @@
                     <button class="btn-green" onclick="exportBillingQueueToExcel()">&#11139; Export to XLSX</button>
                 </div>
             </div>
-            <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:14px; line-height:1.45;">
-                Test build using <b>Aging Repairs.xlsx</b> from Firebase as the rep-class/billing source of truth. Rows are rolled up by RONUM because the source has line-level labor/parts/service rows.
-            </div>
             <div class="billing-kpi-strip" id="billing-kpi-strip"></div>
             <div class="filter-bar" style="align-items:center;">
                 <input id="billing-search" class="filter-select" style="max-width:420px;" placeholder="Search RO, unit, branch, rep class, flag..." oninput="renderBillingQueue()">
@@ -1228,6 +1225,7 @@
                         globalBillingReviewState = snapshot.val() || {};
                         try { localStorage.setItem('workflow_billing_review_status', JSON.stringify(globalBillingReviewState)); } catch(e) {}
                         renderBillingQueue();
+                        if (processedData && processedData.length > 0) refreshActiveViewPreservingDrilldown();
                     });
 
                     db.ref('spendGovernor/manualLock').on('value', (snapshot) => {
@@ -4011,6 +4009,12 @@
         }
 
 
+        function formatCurrency(value) {
+            const n = Number(String(value ?? '').replace(/[$,]/g, ''));
+            const amount = isNaN(n) ? 0 : n;
+            return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function normalizeBillingText(value) {
             return String(value || '').toUpperCase().trim();
         }
@@ -4192,6 +4196,9 @@
                 return (b.spend || 0) - (a.spend || 0);
             });
             renderBillingQueue();
+            if (processedData && processedData.length > 0) {
+                setTimeout(() => refreshActiveViewPreservingDrilldown(), 0);
+            }
         }
 
         function getBillingBadgesHtml(roNum) {
@@ -4235,13 +4242,13 @@
                 <div class="workflow-compliance-card ${cls} compact" title="Billing / REPCLASS issue compliance is based on flagged open VROs from Aging Repairs.xlsx. Coordinators should update, review, correct, or escalate these daily.">
                     <div class="workflow-compliance-header">
                         <div>
-                            <div class="workflow-compliance-label">Billing / REPCLASS Compliance</div>
+                            <div class="workflow-compliance-label">Problem VRO Compliance</div>
                             <div class="workflow-compliance-score">${pct}%</div>
                         </div>
                         <div class="workflow-compliance-rating">${rating}</div>
                     </div>
                     <div class="workflow-compliance-grid">
-                        <div class="workflow-compliance-mini"><div class="mini-title">Flagged</div><div class="mini-num">${issues.length}</div></div>
+                        <div class="workflow-compliance-mini"><div class="mini-title">Problem VROs</div><div class="mini-num">${issues.length}</div></div>
                         <div class="workflow-compliance-mini"><div class="mini-title">Touched</div><div class="mini-num">${touchedToday}/${issues.length}</div></div>
                         <div class="workflow-compliance-mini"><div class="mini-title">Open</div><div class="mini-num">${openIssues.length}</div></div>
                         <div class="workflow-compliance-mini"><div class="mini-title">Cleared</div><div class="mini-num">${issues.length - openIssues.length}</div></div>
