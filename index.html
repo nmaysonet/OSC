@@ -256,14 +256,15 @@
         .billing-kpi .value { font-size:24px; font-weight:900; color:#334155; margin-top:4px; }
         .billing-kpi.clickable, .highlight-box.clickable, .stat-box.clickable, .workflow-compliance-mini.clickable { cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
         .billing-kpi.clickable:hover, .highlight-box.clickable:hover, .stat-box.clickable:hover, .workflow-compliance-mini.clickable:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(15,23,42,0.14); border-color:var(--gold); }
-        .billing-owner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; margin-bottom:18px; }
-        .billing-owner-tile { background:#fff; border:1px solid var(--border); border-top:4px solid var(--gold); border-radius:8px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-        .billing-owner-name { font-size:18px; font-weight:900; color:#334155; margin-bottom:10px; }
-        .billing-owner-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-        .billing-owner-metric { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; text-align:center; cursor:pointer; transition:0.15s; }
+        .billing-owner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:20px; margin-bottom:18px; }
+        .billing-owner-tile { background:#fff; padding:25px 20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; border-top:4px solid var(--gold) !important; transition:transform 0.2s ease, box-shadow 0.2s ease, border-top-color 0.2s ease; display:flex; flex-direction:column; }
+        .billing-owner-tile:hover { transform:translateY(-5px); box-shadow:0 12px 20px rgba(0,0,0,0.12); border-top-color:#000 !important; }
+        .billing-owner-name { font-size:20px; font-weight:800; color:#333; margin-bottom:15px; }
+        .billing-owner-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; border-top:1px solid #eee; padding-top:15px; width:100%; }
+        .billing-owner-metric { background:#f9f9f9; padding:10px 5px; border-radius:4px; text-align:center; cursor:pointer; transition:0.15s; border:1px solid transparent; }
         .billing-owner-metric:hover { background:#fff7ed; border-color:var(--gold); transform:translateY(-1px); }
-        .billing-owner-metric .label { font-size:9px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:0.35px; }
-        .billing-owner-metric .value { font-size:18px; font-weight:900; color:#334155; margin-top:2px; }
+        .billing-owner-metric .label { font-size:10px; font-weight:700; color:#666; text-transform:uppercase; margin-bottom:5px; }
+        .billing-owner-metric .value { font-size:16px; font-weight:700; color:#444; }
         .billing-active-filter { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:900; color:#334155; background:#f8fafc; border:1px solid #cbd5e1; border-radius:999px; padding:6px 10px; }
         .billing-active-filter button { border:none; background:#334155; color:#fff; border-radius:999px; font-size:10px; font-weight:900; padding:3px 7px; cursor:pointer; }
         .billing-filter-pill { padding:8px 12px; border:1px solid #cbd5e1; border-radius:999px; background:#fff; cursor:pointer; font-size:12px; font-weight:900; color:#334155; }
@@ -681,7 +682,7 @@
                 <button class="filter-btn" onclick="loadAgingRepairsFromFirebase(true)">Reload Aging Repairs</button>
                 <span id="billing-load-status" style="font-size:12px; color:#64748b; font-weight:800;"></span>
             </div>
-            <div class="drilldown-container table-wrapper">
+            <div class="drilldown-container table-wrapper" id="billing-detail-wrapper" style="display:none;">
                 <table class="billing-table">
                     <colgroup>
                         <col style="width:9%;"><col style="width:9%;"><col style="width:14%;"><col style="width:9%;"><col style="width:8%;"><col style="width:9%;"><col style="width:9%;"><col style="width:8%;"><col style="width:17%;"><col style="width:8%;">
@@ -1611,7 +1612,8 @@
         }
 
         function filterBillingRowsByMetric(rows, owner, metric) {
-            let out = (rows || []).filter(isBillingRowUnresolved);
+            let out = getBillingRowsForOwnerTile(rows || []);
+            if (metric !== 'CORRECTED') out = out.filter(isBillingRowUnresolved);
             if (owner && owner !== 'ALL') {
                 out = out.filter(r => String(r.coordinator || 'Unassigned') === owner);
             }
@@ -1619,6 +1621,7 @@
             else if (metric === 'COMPLETED') out = out.filter(r => isBillingClosedStatus(r.currentStatus));
             else if (metric === 'REVIEW_NEEDED') out = out.filter(isBillingRowReviewNeeded);
             else if (metric === 'NEEDS_FIX') out = out.filter(isBillingRowUnresolved);
+            else if (metric === 'CORRECTED') out = out.filter(r => ['Reviewed','Corrected','Cleared'].includes(getBillingReviewStatus(r)));
             else if (metric === 'COMPLIANCE') out = out;
             return out;
         }
@@ -4549,19 +4552,52 @@
             }
         }
 
+
+        function normalizeBillingTeamName(value) {
+            const v = String(value || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+            if (v.includes('PM')) return 'PM';
+            if (v.includes('ERS') || v.includes('EMERGENCY') || v.includes('ROAD')) return 'ERS';
+            if (v.includes('VENDED') || v.includes('SCHEDULED') || v.includes('REPAIR')) return 'VENDED REPAIR';
+            return v || '';
+        }
+
+        function isAllowedBillingTeamRow(row) {
+            const team = normalizeBillingTeamName(row && (row.responsibleQueue || row.queueSource));
+            return ['VENDED REPAIR','PM','ERS'].includes(team);
+        }
+
+        function getBillingRowsForOwnerTile(rows) {
+            return (rows || []).filter(isAllowedBillingTeamRow);
+        }
+
+        function openBillingOwnerDetail(owner, metric = 'ALL', event = null) {
+            if (event) stopTileClick(event);
+            currentBillingOwnerFilter = owner || 'ALL';
+            currentBillingMetricFilter = metric || 'ALL';
+            const searchEl = document.getElementById('billing-search');
+            if (searchEl) searchEl.value = '';
+            renderBillingQueue();
+            const wrapper = document.getElementById('billing-detail-wrapper');
+            if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         function renderBillingOwnerTiles(allRows) {
             const kpi = document.getElementById('billing-kpi-strip');
             if (!kpi) return;
-            const unresolved = (allRows || []).filter(isBillingRowUnresolved);
+
+            const scopedRows = getBillingRowsForOwnerTile(allRows);
+            const unresolved = scopedRows.filter(isBillingRowUnresolved);
             const byOwner = {};
             unresolved.forEach(r => {
                 const owner = r.coordinator || 'Unassigned';
+                if (!owner || String(owner).toUpperCase() === 'UNASSIGNED') return;
                 if (!byOwner[owner]) byOwner[owner] = [];
                 byOwner[owner].push(r);
             });
             const owners = Object.keys(byOwner).sort();
             if (!owners.length) {
-                kpi.innerHTML = '<div class="no-data-msg" style="padding:16px;">No active billing / repair class issues.</div>';
+                kpi.className = 'billing-owner-grid';
+                kpi.innerHTML = '<div class="no-data-msg" style="padding:16px; grid-column:1 / -1;">No active repair class issues for Vended Repair, PM, or ERS.</div>';
                 return;
             }
             kpi.className = 'billing-owner-grid';
@@ -4570,19 +4606,35 @@
                 const openRows = rows.filter(r => !isBillingClosedStatus(r.currentStatus));
                 const completedRows = rows.filter(r => isBillingClosedStatus(r.currentStatus));
                 const reviewNeeded = rows.filter(isBillingRowReviewNeeded);
-                const fixed = rows.filter(r => ['Reviewed','Corrected','Cleared'].includes(getBillingReviewStatus(r)));
-                const score = rows.length ? Math.round((fixed.length / rows.length) * 100) : 100;
+                const corrected = rows.filter(r => ['Reviewed','Corrected','Cleared'].includes(getBillingReviewStatus(r)));
+                const touchedToday = rows.filter(r => roTouchedToday(r.safeRo)).length;
+                const compliant = rows.filter(r => ['Reviewed','Corrected','Cleared'].includes(getBillingReviewStatus(r)) || roTouchedToday(r.safeRo)).length;
+                const score = rows.length ? Math.round((compliant / rows.length) * 100) : 100;
+                const cardCls = score >= 85 ? 'compliance-green' : (score >= 70 ? 'compliance-yellow' : 'compliance-red');
+                const rating = score >= 85 ? 'ON TRACK' : (score >= 70 ? 'WATCH' : 'NEEDS ACTION');
                 const safeOwner = String(owner).replace(/'/g, "\\'");
-                const color = score >= 85 ? '#16a34a' : (score >= 70 ? '#d97706' : '#dc2626');
-                return `<div class="billing-owner-tile">
+                return `<div class="billing-owner-tile" onclick="openBillingOwnerDetail('${safeOwner}', 'ALL', event)">
                     <div class="billing-owner-name">${escapeHtml(owner)}</div>
+                    <div class="workflow-compliance-card ${cardCls} compact" style="margin-top:0; margin-bottom:12px;">
+                        <div class="workflow-compliance-header">
+                            <div>
+                                <div class="workflow-compliance-label">Daily Repair Class Compliance</div>
+                                <div class="workflow-compliance-score">${score}%</div>
+                            </div>
+                            <span class="workflow-compliance-rating">${rating}</span>
+                        </div>
+                        <div class="workflow-compliance-grid">
+                            <div class="workflow-compliance-mini clickable" onclick="openBillingOwnerDetail('${safeOwner}', 'REVIEW_NEEDED', event)"><div class="mini-title">Review</div><div class="mini-num">${reviewNeeded.length}</div></div>
+                            <div class="workflow-compliance-mini clickable" onclick="openBillingOwnerDetail('${safeOwner}', 'COMPLIANCE', event)"><div class="mini-title">Touched</div><div class="mini-num">${touchedToday}/${rows.length}</div></div>
+                            <div class="workflow-compliance-mini clickable" onclick="openBillingOwnerDetail('${safeOwner}', 'COMPLETED', event)"><div class="mini-title">Completed</div><div class="mini-num">${completedRows.length}</div></div>
+                            <div class="workflow-compliance-mini clickable" onclick="openBillingOwnerDetail('${safeOwner}', 'CORRECTED', event)"><div class="mini-title">Corrected</div><div class="mini-num">${corrected.length}</div></div>
+                        </div>
+                    </div>
                     <div class="billing-owner-metrics">
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'OPEN', event)"><div class="label">Open ROs</div><div class="value">${openRows.length}</div></div>
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'COMPLETED', event)"><div class="label">Completed ROs</div><div class="value">${completedRows.length}</div></div>
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'NEEDS_FIX', event)"><div class="label">Need Fix</div><div class="value">${rows.length}</div></div>
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'REVIEW_NEEDED', event)"><div class="label">Review Needed</div><div class="value">${reviewNeeded.length}</div></div>
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'COMPLIANCE', event)"><div class="label">Compliance</div><div class="value" style="color:${color};">${score}%</div></div>
-                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'NEEDS_FIX', event)"><div class="label">Orders</div><div class="value">${rows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="openBillingOwnerDetail('${safeOwner}', 'OPEN', event)"><div class="label">Open ROs</div><div class="value">${openRows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="openBillingOwnerDetail('${safeOwner}', 'COMPLETED', event)"><div class="label">Completed ROs</div><div class="value">${completedRows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="openBillingOwnerDetail('${safeOwner}', 'NEEDS_FIX', event)"><div class="label">Need Fix</div><div class="value">${rows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="openBillingOwnerDetail('${safeOwner}', 'REVIEW_NEEDED', event)"><div class="label">Review Needed</div><div class="value">${reviewNeeded.length}</div></div>
                     </div>
                 </div>`;
             }).join('');
@@ -4595,6 +4647,10 @@
             const baseRows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
             renderBillingOwnerTiles(baseRows);
 
+            const wrapper = document.getElementById('billing-detail-wrapper');
+            const hasOwnerFilter = currentBillingOwnerFilter && currentBillingOwnerFilter !== 'ALL';
+            if (wrapper) wrapper.style.display = hasOwnerFilter ? '' : 'none';
+
             let rows = filterBillingRowsByMetric(baseRows, currentBillingOwnerFilter, currentBillingMetricFilter);
             if (search) {
                 rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.recommendedClass, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
@@ -4603,11 +4659,15 @@
             const statusEl = document.getElementById('billing-load-status');
             if (statusEl) {
                 const filterText = currentBillingOwnerFilter !== 'ALL' || currentBillingMetricFilter !== 'ALL'
-                    ? `<span class="billing-active-filter">Filtered to ${escapeHtml(currentBillingOwnerFilter)} / ${escapeHtml(currentBillingMetricFilter.replace(/_/g,' '))} <button onclick="clearBillingOwnerMetricFilter()">CLEAR</button></span>`
+                    ? `<span class="billing-active-filter">${escapeHtml(currentBillingOwnerFilter)} / ${escapeHtml(currentBillingMetricFilter.replace(/_/g,' '))} <button onclick="clearBillingOwnerMetricFilter()">BACK TO TILES</button></span>`
                     : '';
                 statusEl.innerHTML = filterText;
             }
 
+            if (!hasOwnerFilter) {
+                body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">Select a coordinator tile to view repair-class issues.</td></tr>`;
+                return;
+            }
             if (!globalBillingRows.length) {
                 body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">No billing flags loaded. Confirm Aging Repairs.xlsx exists in Firebase Storage.</td></tr>`;
                 return;
@@ -6573,7 +6633,7 @@
                 menuElement.classList.add('active');
                 const queuesSubmenu = document.getElementById('queues-submenu');
                 const queuesToggle = document.getElementById('menu-queues');
-                if (['pm-view', 'vended-view', 'ers-view'].includes(viewId) && queuesSubmenu && queuesToggle) {
+                if (['pm-view', 'vended-view', 'ers-view', 'billing-view', 'archive-view'].includes(viewId) && queuesSubmenu && queuesToggle) {
                     queuesSubmenu.classList.add('open');
                     queuesToggle.classList.add('expanded');
                     queuesToggle.classList.add('active');
