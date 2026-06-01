@@ -676,7 +676,7 @@
                     <button class="btn-green" onclick="exportBillingQueueToExcel()">&#11139; Export to XLSX</button>
                 </div>
             </div>
-            <div class="billing-kpi-strip" id="billing-kpi-strip"></div>
+            <div class="billing-kpi-strip" id="billing-kpi-strip" style="display:none;"></div>
             <div class="filter-bar" style="align-items:center;">
                 <input id="billing-search" class="filter-select" style="max-width:420px;" placeholder="Search RO, unit, branch, rep class, flag..." oninput="renderBillingQueue()">
                 <button class="filter-btn" onclick="loadAgingRepairsFromFirebase(true)">Reload Aging Repairs</button>
@@ -4643,42 +4643,57 @@
         function renderBillingQueue() {
             const body = document.getElementById('billing-queue-body');
             if (!body) return;
-            const search = (document.getElementById('billing-search')?.value || '').toLowerCase().trim();
-            const baseRows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
-            renderBillingOwnerTiles(baseRows);
 
             const wrapper = document.getElementById('billing-detail-wrapper');
-            const hasOwnerFilter = currentBillingOwnerFilter && currentBillingOwnerFilter !== 'ALL';
-            if (wrapper) wrapper.style.display = hasOwnerFilter ? '' : 'none';
+            if (wrapper) wrapper.style.display = '';
 
-            let rows = filterBillingRowsByMetric(baseRows, currentBillingOwnerFilter, currentBillingMetricFilter);
+            const kpi = document.getElementById('billing-kpi-strip');
+            if (kpi) {
+                kpi.style.display = 'none';
+                kpi.innerHTML = '';
+            }
+
+            const search = (document.getElementById('billing-search')?.value || '').toLowerCase().trim();
+            let rows = (globalBillingRows || [])
+                .map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }))
+                .filter(isBillingRowUnresolved);
+
             if (search) {
-                rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.recommendedClass, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
+                rows = rows.filter(r => [
+                    r.roNumber,
+                    r.unitNo,
+                    r.branch,
+                    r.coordinator,
+                    r.queueSource,
+                    r.currentStatus,
+                    r.repClass,
+                    r.suggestedService,
+                    r.recommendedClass,
+                    (r.flags || []).join(' '),
+                    (r.reasons || []).join(' ')
+                ].join(' ').toLowerCase().includes(search));
             }
 
             const statusEl = document.getElementById('billing-load-status');
             if (statusEl) {
-                const filterText = currentBillingOwnerFilter !== 'ALL' || currentBillingMetricFilter !== 'ALL'
-                    ? `<span class="billing-active-filter">${escapeHtml(currentBillingOwnerFilter)} / ${escapeHtml(currentBillingMetricFilter.replace(/_/g,' '))} <button onclick="clearBillingOwnerMetricFilter()">BACK TO TILES</button></span>`
-                    : '';
-                statusEl.innerHTML = filterText;
+                const loadedCount = globalBillingRows ? globalBillingRows.length : 0;
+                const visibleCount = rows.length;
+                statusEl.innerHTML = loadedCount ? `${visibleCount} repair-class review item(s)` : '';
             }
 
-            if (!hasOwnerFilter) {
-                body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">Select a coordinator tile to view repair-class issues.</td></tr>`;
-                return;
-            }
-            if (!globalBillingRows.length) {
+            if (!globalBillingRows || !globalBillingRows.length) {
                 body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">No billing flags loaded. Confirm Aging Repairs.xlsx exists in Firebase Storage.</td></tr>`;
                 return;
             }
+
             if (!rows.length) {
-                body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">No billing flags match the current filter.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; font-weight:800; padding:20px;">No open repair-class review items match the current search.</td></tr>`;
                 return;
             }
+
             body.innerHTML = rows.map(r => {
-                const flagHtml = r.flags.map(flag => `<span class="billing-badge ${flag.includes('DEF') || flag.includes('DRIVER') || flag.includes('ACCIDENT') || flag.includes('TOWING') || flag.includes('SPECIAL') || flag.includes('MERCHANT') || flag.includes('4+') ? 'excludable-review' : flag.includes('REP') || flag.includes('PM') || flag.includes('GARDA') ? 'repclass-review' : 'billing-review'}">${escapeHtml(flag)}</span>`).join(' ');
-                const reasons = r.reasons.map(x => `<div>• ${escapeHtml(x)}</div>`).join('');
+                const flagHtml = (r.flags || []).map(flag => `<span class="billing-badge ${flag.includes('DEF') || flag.includes('DRIVER') || flag.includes('ACCIDENT') || flag.includes('TOWING') || flag.includes('SPECIAL') || flag.includes('MERCHANT') || flag.includes('4+') ? 'excludable-review' : flag.includes('REP') || flag.includes('PM') || flag.includes('GARDA') ? 'repclass-review' : 'billing-review'}">${escapeHtml(flag)}</span>`).join(' ');
+                const reasons = (r.reasons || []).map(x => `<div>• ${escapeHtml(x)}</div>`).join('');
                 const noteBtn = `<button class="${roHasMeaningfulNote(r.safeRo) ? 'note-btn has-note' : 'note-btn'}" onclick="openNoteModal('${r.safeRo}', '${escapeHtml(r.roNumber)}')" title="Billing review note">📝</button>`;
                 return `<tr>
                     <td><a class="ro-link" href="${getBillingRoUrl(r.roNumber)}" target="_blank">${escapeHtml(r.roNumber)}</a> ${noteBtn}</td>
@@ -4698,7 +4713,7 @@
         }
 
         function exportBillingQueueToExcel() {
-            const rows = (globalBillingRows || []).map(r => ({
+            const rows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) })).filter(isBillingRowUnresolved).map(r => ({
                 'RO Number': r.roNumber,
                 'Unit': r.unitNo,
                 'Location': r.branch,
