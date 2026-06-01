@@ -254,6 +254,18 @@
         .billing-kpi { background:#fff; border:1px solid var(--border); border-top:4px solid var(--gold); border-radius:8px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
         .billing-kpi .label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; }
         .billing-kpi .value { font-size:24px; font-weight:900; color:#334155; margin-top:4px; }
+        .billing-kpi.clickable, .highlight-box.clickable, .stat-box.clickable, .workflow-compliance-mini.clickable { cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+        .billing-kpi.clickable:hover, .highlight-box.clickable:hover, .stat-box.clickable:hover, .workflow-compliance-mini.clickable:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(15,23,42,0.14); border-color:var(--gold); }
+        .billing-owner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; margin-bottom:18px; }
+        .billing-owner-tile { background:#fff; border:1px solid var(--border); border-top:4px solid var(--gold); border-radius:8px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+        .billing-owner-name { font-size:18px; font-weight:900; color:#334155; margin-bottom:10px; }
+        .billing-owner-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .billing-owner-metric { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; text-align:center; cursor:pointer; transition:0.15s; }
+        .billing-owner-metric:hover { background:#fff7ed; border-color:var(--gold); transform:translateY(-1px); }
+        .billing-owner-metric .label { font-size:9px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:0.35px; }
+        .billing-owner-metric .value { font-size:18px; font-weight:900; color:#334155; margin-top:2px; }
+        .billing-active-filter { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:900; color:#334155; background:#f8fafc; border:1px solid #cbd5e1; border-radius:999px; padding:6px 10px; }
+        .billing-active-filter button { border:none; background:#334155; color:#fff; border-radius:999px; font-size:10px; font-weight:900; padding:3px 7px; cursor:pointer; }
         .billing-filter-pill { padding:8px 12px; border:1px solid #cbd5e1; border-radius:999px; background:#fff; cursor:pointer; font-size:12px; font-weight:900; color:#334155; }
         .billing-filter-pill.active { background:var(--gold); border-color:var(--gold); color:#222; }
         .billing-reasons { font-size:11px; line-height:1.35; color:#334155; }
@@ -1546,6 +1558,99 @@
             return { score, rating, colorClass, total, touched, notes, dispatched, dispatchTotal, stale, touchPct: Math.round(touchPct * 100), notesPct: Math.round(notesPct * 100), dispatchPct: Math.round(dispatchPct * 100), staleCleanPct: Math.round(staleCleanPct * 100), dateKey, lockActive, lockedExcluded, realOpenTotal: realOpenRos.length };
         }
 
+
+        function stopTileClick(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+
+        function openOwnerMetricDrilldown(owner, parentViewId, metricFilter, event) {
+            stopTileClick(event);
+            currentDrilldownMetricFilter = metricFilter || 'ALL';
+            loadPersonDrilldown(owner, parentViewId);
+        }
+
+        function clearOwnerMetricFilter() {
+            currentDrilldownMetricFilter = 'ALL';
+            applyDrilldownFilters();
+        }
+
+        function setBillingOwnerMetricFilter(owner, metric, event) {
+            stopTileClick(event);
+            currentBillingOwnerFilter = owner || 'ALL';
+            currentBillingMetricFilter = metric || 'ALL';
+            const searchEl = document.getElementById('billing-search');
+            if (searchEl) searchEl.value = '';
+            renderBillingQueue();
+        }
+
+        function clearBillingOwnerMetricFilter() {
+            currentBillingOwnerFilter = 'ALL';
+            currentBillingMetricFilter = 'ALL';
+            renderBillingQueue();
+        }
+
+        function getBillingReviewStatus(r) {
+            return String((r && (r.reviewStatus || getBillingReviewStatusForSafeRo(r.safeRo))) || 'Open');
+        }
+
+        function isBillingClosedStatus(status) {
+            return normalizeSpendStatus(status) === 'CLOSED' || /COMPLETED|CLOSED|FINAL CHARGES|BILLED|INVOICED/i.test(String(status || ''));
+        }
+
+        function isBillingRowUnresolved(r) {
+            const st = getBillingReviewStatus(r);
+            return !['Corrected','Cleared'].includes(st);
+        }
+
+        function isBillingRowReviewNeeded(r) {
+            const st = getBillingReviewStatus(r);
+            return ['Open','Correction Needed','Escalated'].includes(st);
+        }
+
+        function filterBillingRowsByMetric(rows, owner, metric) {
+            let out = (rows || []).filter(isBillingRowUnresolved);
+            if (owner && owner !== 'ALL') {
+                out = out.filter(r => String(r.coordinator || 'Unassigned') === owner);
+            }
+            if (metric === 'OPEN') out = out.filter(r => !isBillingClosedStatus(r.currentStatus));
+            else if (metric === 'COMPLETED') out = out.filter(r => isBillingClosedStatus(r.currentStatus));
+            else if (metric === 'REVIEW_NEEDED') out = out.filter(isBillingRowReviewNeeded);
+            else if (metric === 'NEEDS_FIX') out = out.filter(isBillingRowUnresolved);
+            else if (metric === 'COMPLIANCE') out = out;
+            return out;
+        }
+
+        function getRepairClassIssueForSafeRo(safeRo) {
+            if (!safeRo || !globalBillingRows) return null;
+            return globalBillingRows.find(r => r.safeRo === safeRo && isBillingRowUnresolved(Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }))) || null;
+        }
+
+        function rowMatchesMetricFilter(row) {
+            const f = currentDrilldownMetricFilter || 'ALL';
+            if (f === 'ALL') return true;
+            if (f === 'OPEN') return row.dataset.open === 'true';
+            if (f === 'COMPLETED') return row.dataset.completedReview === 'true';
+            if (f === 'OOS') return row.dataset.oos === 'true';
+            if (f === 'PRIORITY') return row.dataset.priority === 'true';
+            if (f === 'TOUCHED') return row.dataset.touched === 'true';
+            if (f === 'NOT_TOUCHED') return row.dataset.touched !== 'true';
+            if (f === 'NOTES') return row.dataset.note === 'true';
+            if (f === 'DISPATCHED') return row.dataset.dispatched === 'true';
+            if (f === 'STALE') return row.dataset.stale === 'true';
+            if (f === 'REPAIR_CLASS') return row.dataset.repairClassIssue === 'true';
+            if (f === 'REPAIR_CLASS_REVIEW_NEEDED') return row.dataset.repairClassIssue === 'true' && row.dataset.repairClassCorrected !== 'true';
+            return true;
+        }
+
+        function getMetricFilterLabel() {
+            const labels = {
+                OPEN: 'Open ROs', COMPLETED: 'Completed ROs', OOS: 'OOS ROs', PRIORITY: 'Priority ROs', TOUCHED: 'Touched Today', NOT_TOUCHED: 'Not Touched Today', NOTES: 'Notes Current', DISPATCHED: 'Dispatched', STALE: 'Stale ROs', REPAIR_CLASS: 'Repair Class Issues', REPAIR_CLASS_REVIEW_NEEDED: 'Review Needed'
+            };
+            return labels[currentDrilldownMetricFilter] || '';
+        }
         function generateWorkflowComplianceHtml(dataSet, compact = false) {
             const c = calculateWorkflowCompliance(dataSet);
             const prior = calculateWorkflowCompliance(dataSet, getPriorLocalDateKey());
@@ -1568,10 +1673,10 @@
                         </div>
                     </div>
                     <div class="workflow-compliance-grid">
-                        <div class="workflow-compliance-mini"><div class="mini-title">Touched</div><div class="mini-num">${c.touched}/${c.total}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Notes</div><div class="mini-num">${c.notes}/${c.total}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Dispatch</div><div class="mini-num">${c.dispatched}/${c.dispatchTotal}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Stale</div><div class="mini-num">${c.stale}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'TOUCHED', event)" title="Show ROs touched today"><div class="mini-title">Touched</div><div class="mini-num">${c.touched}/${c.total}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'NOTES', event)" title="Show ROs with current meaningful notes"><div class="mini-title">Notes</div><div class="mini-num">${c.notes}/${c.total}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'DISPATCHED', event)" title="Show dispatched ROs"><div class="mini-title">Dispatch</div><div class="mini-num">${c.dispatched}/${c.dispatchTotal}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'STALE', event)" title="Show stale ROs"><div class="mini-title">Stale</div><div class="mini-num">${c.stale}</div></div>
                     </div>
                     ${lockNote}
                 </div>`;
@@ -1699,6 +1804,9 @@
 
         let processedData = []; 
         let currentFilter = 'ALL';
+        let currentDrilldownMetricFilter = 'ALL';
+        let currentBillingOwnerFilter = 'ALL';
+        let currentBillingMetricFilter = 'ALL';
         let currentCustomerFilter = 'ALL';
         let currentOwnerView = '';
         let currentParentView = '';
@@ -3874,6 +3982,7 @@
 
         function setFilter(val) {
             currentFilter = val;
+            currentDrilldownMetricFilter = 'ALL';
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 if(btn.dataset.filter === val) { btn.classList.add('active'); btn.style.background = 'var(--gold)'; } 
                 else { btn.classList.remove('active'); btn.style.background = '#e0e0e0'; }
@@ -4411,10 +4520,10 @@
                         <div class="workflow-compliance-rating">${rating}</div>
                     </div>
                     <div class="workflow-compliance-grid">
-                        <div class="workflow-compliance-mini"><div class="mini-title">Repair Class ROs</div><div class="mini-num">${issues.length}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Touched</div><div class="mini-num">${touchedToday}/${issues.length}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Open</div><div class="mini-num">${openIssues.length}</div></div>
-                        <div class="workflow-compliance-mini"><div class="mini-title">Cleared</div><div class="mini-num">${issues.length - openIssues.length}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'REPAIR_CLASS', event)" title="Show repair class issue ROs"><div class="mini-title">Repair Class ROs</div><div class="mini-num">${issues.length}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'TOUCHED', event)" title="Show repair class ROs touched today"><div class="mini-title">Touched</div><div class="mini-num">${touchedToday}/${issues.length}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'REPAIR_CLASS_REVIEW_NEEDED', event)" title="Show repair class ROs needing review"><div class="mini-title">Review Needed</div><div class="mini-num">${openIssues.length}</div></div>
+                        <div class="workflow-compliance-mini clickable" onclick="openOwnerMetricDrilldown(currentOwnerView, currentParentView, 'REPAIR_CLASS', event)" title="Show repair class issue ROs"><div class="mini-title">Corrected</div><div class="mini-num">${issues.length - openIssues.length}</div></div>
                     </div>
                 </div>`;
         }
@@ -4440,27 +4549,63 @@
             }
         }
 
+        function renderBillingOwnerTiles(allRows) {
+            const kpi = document.getElementById('billing-kpi-strip');
+            if (!kpi) return;
+            const unresolved = (allRows || []).filter(isBillingRowUnresolved);
+            const byOwner = {};
+            unresolved.forEach(r => {
+                const owner = r.coordinator || 'Unassigned';
+                if (!byOwner[owner]) byOwner[owner] = [];
+                byOwner[owner].push(r);
+            });
+            const owners = Object.keys(byOwner).sort();
+            if (!owners.length) {
+                kpi.innerHTML = '<div class="no-data-msg" style="padding:16px;">No active billing / repair class issues.</div>';
+                return;
+            }
+            kpi.className = 'billing-owner-grid';
+            kpi.innerHTML = owners.map(owner => {
+                const rows = byOwner[owner];
+                const openRows = rows.filter(r => !isBillingClosedStatus(r.currentStatus));
+                const completedRows = rows.filter(r => isBillingClosedStatus(r.currentStatus));
+                const reviewNeeded = rows.filter(isBillingRowReviewNeeded);
+                const fixed = rows.filter(r => ['Reviewed','Corrected','Cleared'].includes(getBillingReviewStatus(r)));
+                const score = rows.length ? Math.round((fixed.length / rows.length) * 100) : 100;
+                const safeOwner = String(owner).replace(/'/g, "\\'");
+                const color = score >= 85 ? '#16a34a' : (score >= 70 ? '#d97706' : '#dc2626');
+                return `<div class="billing-owner-tile">
+                    <div class="billing-owner-name">${escapeHtml(owner)}</div>
+                    <div class="billing-owner-metrics">
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'OPEN', event)"><div class="label">Open ROs</div><div class="value">${openRows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'COMPLETED', event)"><div class="label">Completed ROs</div><div class="value">${completedRows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'NEEDS_FIX', event)"><div class="label">Need Fix</div><div class="value">${rows.length}</div></div>
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'REVIEW_NEEDED', event)"><div class="label">Review Needed</div><div class="value">${reviewNeeded.length}</div></div>
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'COMPLIANCE', event)"><div class="label">Compliance</div><div class="value" style="color:${color};">${score}%</div></div>
+                        <div class="billing-owner-metric" onclick="setBillingOwnerMetricFilter('${safeOwner}', 'NEEDS_FIX', event)"><div class="label">Orders</div><div class="value">${rows.length}</div></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
         function renderBillingQueue() {
             const body = document.getElementById('billing-queue-body');
-            const kpi = document.getElementById('billing-kpi-strip');
             if (!body) return;
             const search = (document.getElementById('billing-search')?.value || '').toLowerCase().trim();
-            let rows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) })).filter(r => !['Corrected','Cleared'].includes(r.reviewStatus));
+            const baseRows = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) }));
+            renderBillingOwnerTiles(baseRows);
+
+            let rows = filterBillingRowsByMetric(baseRows, currentBillingOwnerFilter, currentBillingMetricFilter);
             if (search) {
-                rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
+                rows = rows.filter(r => [r.roNumber, r.unitNo, r.branch, r.coordinator, r.queueSource, r.currentStatus, r.repClass, r.suggestedService, r.recommendedClass, r.flags.join(' '), r.reasons.join(' ')].join(' ').toLowerCase().includes(search));
             }
 
-            const allBillingRowsWithStatus = (globalBillingRows || []).map(r => Object.assign({}, r, { reviewStatus: getBillingReviewStatusForSafeRo(r.safeRo) })).filter(r => !['Corrected','Cleared'].includes(r.reviewStatus));
-            const total = allBillingRowsWithStatus.length;
-            const open = allBillingRowsWithStatus.filter(r => (r.reviewStatus || 'Open') === 'Open').length;
-            const rep = allBillingRowsWithStatus.filter(r => r.flags.some(f => f.includes('REP') || f.includes('PM') || f.includes('ERS'))).length;
-            const ex = allBillingRowsWithStatus.filter(r => r.flags.some(f => f.includes('EXCLUDABLE') || f.includes('4+'))).length;
-            if (kpi) {
-                kpi.innerHTML = `
-                    <div class="billing-kpi"><div class="label">Billing Flags</div><div class="value">${total}</div></div>
-                    <div class="billing-kpi"><div class="label">Open Review</div><div class="value">${open}</div></div>
-                    <div class="billing-kpi"><div class="label">Rep Class Risk</div><div class="value">${rep}</div></div>
-                    <div class="billing-kpi"><div class="label">Budget Class Review</div><div class="value">${ex}</div></div>`;
+            const statusEl = document.getElementById('billing-load-status');
+            if (statusEl) {
+                const filterText = currentBillingOwnerFilter !== 'ALL' || currentBillingMetricFilter !== 'ALL'
+                    ? `<span class="billing-active-filter">Filtered to ${escapeHtml(currentBillingOwnerFilter)} / ${escapeHtml(currentBillingMetricFilter.replace(/_/g,' '))} <button onclick="clearBillingOwnerMetricFilter()">CLEAR</button></span>`
+                    : '';
+                statusEl.innerHTML = filterText;
             }
 
             if (!globalBillingRows.length) {
@@ -4478,7 +4623,7 @@
                 return `<tr>
                     <td><a class="ro-link" href="${getBillingRoUrl(r.roNumber)}" target="_blank">${escapeHtml(r.roNumber)}</a> ${noteBtn}</td>
                     <td>${escapeHtml(r.unitNo)}</td>
-                    <td><strong>${escapeHtml(r.branch || 'Unknown')}</strong><br><span style="font-size:10px;color:#64748b;font-weight:800;">${escapeHtml(r.queueSource || '')}</span></td>
+                    <td><strong>${escapeHtml(r.branch || 'Unknown')}</strong><br><span style="font-size:10px;color:#64748b;font-weight:800;">${escapeHtml(r.queueSource || '')}</span><br><span style="font-size:10px;color:#64748b;">${escapeHtml(r.coordinator || '')}</span></td>
                     <td>${escapeHtml(r.currentStatus || '')}</td>
                     <td>${escapeHtml(r.repClass || '')}</td>
                     <td>${escapeHtml(r.recommendedClass || r.suggestedService || '')}</td>
@@ -5632,13 +5777,11 @@
             document.getElementById('summary-table-body').innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding: 20px;">No data available</td></tr>';
         }
 
-        function generateTileHTML(name, dataSet, chartId = null, isPM = false) {
-            
+        function generateTileHTML(name, dataSet, chartId = null, isPM = false, parentViewId = '') {
             let globalTotal = getSpendGovernorAuthorizedTotal();
             let lockActive = isSpendGovernorLocked();
-            
             let filteredOpen = getTileOpenRoPopulation(dataSet, isPM);
-            
+
             let completedOrders = dataSet.filter(ro => ro.isCompletedKPI);
             let compCount = completedOrders.length;
             let onTimeCount = completedOrders.filter(ro => ro.isOnTimeKPI).length;
@@ -5651,16 +5794,18 @@
                 chartHTML = `<div class="chart-box"><canvas id="${chartId}" data-comp="${compPct}" data-late="${latePct}"></canvas></div>`;
             }
 
+            const ownerArg = String(name).replace(/'/g, "\\'");
+            const parentArg = String(parentViewId || '').replace(/'/g, "\\'");
             let oosAndPriorityHtml = '';
             if (!isPM) {
                 let oosCount = filteredOpen.filter(ro => ro.isOOS).length;
                 let priorityCount = filteredOpen.filter(ro => isPriority(ro)).length;
                 oosAndPriorityHtml = `
-                    <div class="highlight-box oos-box">
+                    <div class="highlight-box oos-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'OOS', event)" title="Show OOS ROs">
                         <div class="title">OOS ROs</div>
                         <div class="num">${oosCount}</div>
                     </div>
-                    <div class="highlight-box urgent-box">
+                    <div class="highlight-box urgent-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'PRIORITY', event)" title="Show Priority ROs">
                         <div class="title">Priority ROs</div>
                         <div class="num">${priorityCount}</div>
                     </div>
@@ -5673,7 +5818,7 @@
             let innerHtml = `
                 <div class="kpi-name">${name}</div>
                 <div class="kpi-top-metrics">
-                    <div class="highlight-box">
+                    <div class="highlight-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'OPEN', event)" title="Show open ROs">
                         <div class="title">Open ROs</div>
                         <div class="num">${filteredOpen.length}</div>
                     </div>
@@ -5681,19 +5826,19 @@
                     ${chartHTML}
                 </div>
                 <div class="kpi-stats-grid">
-                    <div class="stat-box">
+                    <div class="stat-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'COMPLETED', event)" title="Show completed repair-class review ROs, when applicable">
                         <div class="title">Completed</div>
                         <div class="num">${compCount}</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'OPEN', event)" title="Show active open work">
                         <div class="title">On-Time</div>
                         <div class="num">${onTimeCount}</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'OPEN', event)" title="Show active open work">
                         <div class="title">% Compliance</div>
                         <div class="num good">${compPct}%</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box clickable" onclick="openOwnerMetricDrilldown('${ownerArg}', '${parentArg}', 'STALE', event)" title="Show stale work">
                         <div class="title">% Late</div>
                         <div class="num urgent">${latePct}%</div>
                     </div>
@@ -5798,8 +5943,8 @@
                     tile.style.backgroundColor = '#fef2f2';
                 }
 
-                tile.onclick = () => loadPersonDrilldown(owner, parentViewId);
-                tile.innerHTML = generateTileHTML(owner, ownerDataAll, null, isPM);
+                tile.onclick = () => { currentDrilldownMetricFilter = 'ALL'; loadPersonDrilldown(owner, parentViewId); };
+                tile.innerHTML = generateTileHTML(owner, ownerDataAll, null, isPM, parentViewId);
                 container.appendChild(tile);
             });
         }
@@ -6071,7 +6216,14 @@
                                 let lockTooltipHtml = isPreWipLocked ? getLockTooltipHtml() : '';
                                 let roHtml = `<div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">${statusToggleHtml} ${roLinkDisplayHtml} ${noteBtnHtml} ${sourcePillHtml} ${lockTooltipHtml}</div>`;
 
-                                tableHTML += `<tr class="ro-row${isPreWipLocked ? ' locked-prewip-row' : ''}" data-oos="${u.isOOS}" data-priority="${isPri}" title="${isPreWipLocked ? PRE_WIP_LOCK_MESSAGE : ''}">`;
+                                const rowSafeRo = safeRo;
+                                const rowTouched = roTouchedToday(rowSafeRo);
+                                const rowHasNote = roHasMeaningfulNote(rowSafeRo);
+                                const rowDispatched = !!globalRoCheckState[rowSafeRo];
+                                const rowStale = !rowTouched;
+                                const rowRepairIssue = !!getRepairClassIssueForSafeRo(rowSafeRo);
+                                const rowRepairCorrected = getBillingReviewStatusForSafeRo(rowSafeRo) === 'Corrected' || getBillingReviewStatusForSafeRo(rowSafeRo) === 'Cleared';
+                                tableHTML += `<tr class="ro-row${isPreWipLocked ? ' locked-prewip-row' : ''}" data-oos="${u.isOOS}" data-priority="${isPri}" data-open="${!isCompletedRepairClassReview}" data-completed-review="${isCompletedRepairClassReview}" data-touched="${rowTouched}" data-note="${rowHasNote}" data-dispatched="${rowDispatched}" data-stale="${rowStale}" data-repair-class-issue="${rowRepairIssue}" data-repair-class-corrected="${rowRepairCorrected}" title="${isPreWipLocked ? PRE_WIP_LOCK_MESSAGE : ''}">`;
                                 tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'};">${roHtml}</td>`;
                                 
                                 let safeUnitType = u.unitType || 'UNKNOWN';
@@ -6142,6 +6294,7 @@
                     if (currentFilter === 'OOS' && row.dataset.oos !== 'true') show = false;
                     if (currentFilter === 'PRIORITY' && row.dataset.priority !== 'true') show = false;
                 }
+                if (!rowMatchesMetricFilter(row)) show = false;
                 row.style.display = show ? '' : 'none';
             });
 
@@ -6254,7 +6407,8 @@
                 }
             }
 
-            document.getElementById('drilldown-body').innerHTML = budgetHeaderHtml + generateRoDrilldownHtml(ownerDataAll, isPM);
+            const metricFilterBanner = currentDrilldownMetricFilter && currentDrilldownMetricFilter !== 'ALL' ? `<div class="billing-active-filter" style="margin-bottom:12px;">Filtered to: ${getMetricFilterLabel()} <button onclick="clearOwnerMetricFilter()">CLEAR</button></div>` : '';
+            document.getElementById('drilldown-body').innerHTML = budgetHeaderHtml + metricFilterBanner + generateRoDrilldownHtml(ownerDataAll, isPM);
             updateAllNoteButtons(); 
             applyDrilldownFilters(); 
         }
