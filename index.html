@@ -393,6 +393,39 @@
         .compliance-trend-score-yellow { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
         .compliance-trend-score-red { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
 
+
+        .ers-reporting-toolbar { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border); }
+        .ers-reporting-field { display:flex; flex-direction:column; gap:5px; min-width:220px; }
+        .ers-reporting-field label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .ers-reporting-field select { padding:9px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; font-weight:800; background:#fff; color:#334155; }
+        .ers-reporting-summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:12px; }
+        .ers-reporting-summary-card { background:#fff; border:1px solid #e2e8f0; border-top:3px solid var(--gold); border-radius:6px; padding:10px 11px; box-shadow:0 1px 3px rgba(15,23,42,.07); }
+        .ers-reporting-summary-card .summary-label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:.45px; margin-bottom:6px; }
+        .ers-reporting-summary-card .summary-value { font-size:20px; font-weight:900; color:#334155; line-height:1.1; }
+        .ers-reporting-summary-card .summary-sub { font-size:10px; font-weight:800; color:#64748b; margin-top:3px; line-height:1.25; }
+        .ers-reporting-table { min-width:1180px; table-layout:fixed; }
+        .ers-reporting-table th { background:#1F4E78; color:#fff; border-bottom:2px solid #17365d; padding:8px 6px; font-size:10px; line-height:1.15; text-align:center; vertical-align:middle; white-space:normal; }
+        .ers-reporting-table th:hover { background:#17365d; }
+        .ers-reporting-table td { font-size:12px; padding:9px 8px; text-align:center; vertical-align:middle; }
+        .ers-sort-btn { width:100%; background:transparent; border:none; color:inherit; font:inherit; font-weight:900; text-transform:uppercase; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; line-height:1.15; text-align:center; white-space:normal; padding:0; }
+        .ers-sort-btn:hover { color:#fff; opacity:.92; }
+        .ers-coordinator-row td { background:#fff; font-weight:900; }
+        .ers-coordinator-row:hover td { background:#f8fafc; }
+        .ers-expand-btn { background:#e2e8f0; border:1px solid #cbd5e1; color:#334155; border-radius:999px; width:24px; height:24px; font-weight:900; cursor:pointer; line-height:18px; margin-right:8px; }
+        .ers-expand-btn:hover { background:var(--gold); color:#333; border-color:var(--gold-hover); }
+        .ers-detail-cell { background:#f8fafc !important; padding:0 !important; }
+        .ers-detail-wrap { padding:12px; }
+        .ers-detail-table { min-width:1050px; table-layout:fixed; border:1px solid #e2e8f0; background:#fff; }
+        .ers-detail-table th { background:#111827; color:#fff; font-size:10px; padding:7px 6px; }
+        .ers-detail-table td { font-size:11px; padding:8px 6px; text-align:left; }
+        .ers-score-pill { display:inline-flex; align-items:center; justify-content:center; min-width:58px; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:900; }
+        .ers-score-green { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+        .ers-score-yellow { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+        .ers-score-red { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+        .ers-error-pill { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:999px; font-size:10px; font-weight:900; background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+        .ers-ok-pill { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:999px; font-size:10px; font-weight:900; background:#dcfce7; color:#166534; border:1px solid #86efac; }
+        .ers-reporting-message { text-align:center; padding:24px 16px; color:#64748b; font-weight:800; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal-box { background: white; padding: 20px; border-radius: 8px; width: 450px; max-width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; display: flex; justify-content: space-between; align-items: center;}
@@ -462,6 +495,7 @@
             <div class="menu-item" id="menu-spend" onclick="navigate('spend-view', this)">Weekly Spend Matrix</div>
             <div class="menu-item" id="menu-summary" onclick="navigate('summary-view', this)">Consolidation Summary</div>
             <div class="menu-item" id="menu-compliance-reporting" onclick="navigate('compliance-reporting-view', this)">Compliance Reporting</div>
+            <div class="menu-item" id="menu-ers-reporting" onclick="navigate('ers-reporting-view', this); renderErsReporting();">ERS Reporting</div>
         </div>
         
         <div class="sidebar-truck">
@@ -782,6 +816,53 @@
                         </thead>
                         <tbody id="compliance-reporting-body">
                             <tr><td colspan="7"><div class="compliance-reporting-message">Select a report date to load compliance reporting.</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="ers-reporting-view" class="view-section">
+            <div class="view-title">
+                <span style="font-weight: 700;">ERS Reporting</span>
+                <div class="controls-group" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-green" onclick="exportErsReportingToExcel()">&#11139; Export ERS Report</button>
+                </div>
+            </div>
+            <div class="drilldown-container">
+                <div class="ers-reporting-toolbar">
+                    <div class="ers-reporting-field">
+                        <label for="ers-coordinator-filter">Coordinator</label>
+                        <select id="ers-coordinator-filter" onchange="renderErsReporting()">
+                            <option value="ALL">All ERS Coordinators</option>
+                        </select>
+                    </div>
+                    <button class="btn-action" onclick="renderErsReporting()">Refresh Report</button>
+                </div>
+                <div id="ers-reporting-summary" class="ers-reporting-summary-grid"></div>
+                <div class="table-wrapper">
+                    <table id="ers-reporting-table" class="ers-reporting-table">
+                        <colgroup>
+                            <col style="width:24%;">
+                            <col style="width:12%;">
+                            <col style="width:12%;">
+                            <col style="width:12%;">
+                            <col style="width:12%;">
+                            <col style="width:28%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th><button class="ers-sort-btn" onclick="setErsReportingSort('coordinator')">Coordinator</button></th>
+                                <th><button class="ers-sort-btn" onclick="setErsReportingSort('score')">Score</button></th>
+                                <th><button class="ers-sort-btn" onclick="setErsReportingSort('correct')">Correct</button></th>
+                                <th><button class="ers-sort-btn" onclick="setErsReportingSort('errors')">Errors</button></th>
+                                <th><button class="ers-sort-btn" onclick="setErsReportingSort('total')">Total VROs</button></th>
+                                <th>Action Needed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ers-reporting-body">
+                            <tr><td colspan="6"><div class="ers-reporting-message">ERS Reporting will load after the workbook data is processed.</div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -5730,7 +5811,7 @@
                 if (submenu) submenu.classList.add('open');
                 if (toggle) toggle.classList.add('expanded');
             }
-            if (['spend-view', 'summary-view'].includes(target.viewId)) {
+            if (['spend-view', 'summary-view', 'ers-reporting-view'].includes(target.viewId)) {
                 const submenu = document.getElementById('garda-submenu');
                 const toggle = document.getElementById('menu-garda');
                 if (submenu) submenu.classList.add('open');
@@ -8098,7 +8179,7 @@
                 }
                 const gardaSubmenu = document.getElementById('garda-submenu');
                 const gardaToggle = document.getElementById('menu-garda');
-                if (['spend-view', 'summary-view', 'compliance-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
+                if (['spend-view', 'summary-view', 'compliance-reporting-view', 'ers-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
                     gardaSubmenu.classList.add('open');
                     gardaToggle.classList.add('expanded');
                     gardaToggle.classList.add('active');
@@ -8112,6 +8193,7 @@
             else if (viewId === 'home-view') renderHomeDashboard();
             else if (viewId === 'spend-view') renderSpendQueue();
             else if (viewId === 'compliance-reporting-view') loadComplianceReporting();
+            else if (viewId === 'ers-reporting-view') renderErsReporting();
             else if (viewId === 'summary-view') {
                 renderSummary();
                 renderAmeritOos();
@@ -9288,6 +9370,359 @@
         ersOwners = [];
     }
 
+
+    let ersReportingSortState = { key: 'coordinator', direction: 'asc' };
+    let expandedErsReportingCoordinators = {};
+    window.globalErsReportingRows = [];
+
+    function oscHeaderIndexFromRows(rows, candidates, fallback) {
+        const norm = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const candidateKeys = (candidates || []).map(norm);
+        const header = (rows && rows[0]) ? rows[0] : [];
+        for (let i = 0; i < header.length; i++) {
+            const h = norm(header[i]);
+            if (!h) continue;
+            if (candidateKeys.includes(h) || candidateKeys.some(c => h.includes(c) || c.includes(h))) return i;
+        }
+        return fallback;
+    }
+
+    function oscFindHeaderRow(rows, requiredText) {
+        const max = Math.min(20, Array.isArray(rows) ? rows.length : 0);
+        for (let i = 0; i < max; i++) {
+            const txt = (rows[i] || []).join('|').toUpperCase();
+            let ok = true;
+            for (const term of requiredText) {
+                if (!txt.includes(term)) { ok = false; break; }
+            }
+            if (ok) return i;
+        }
+        return 0;
+    }
+
+    function oscBuildErsCoordinatorMap(resourceRawAOA) {
+        const map = {};
+        const rows = Array.isArray(resourceRawAOA) ? resourceRawAOA : [];
+        if (!rows.length) return map;
+        const headerIdx = oscFindHeaderRow(rows, ['OWNER', 'TEAM']);
+        const headers = rows[headerIdx] || rows[0] || [];
+        const normHeader = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const findIdx = (candidates, fallback) => {
+            const candidateKeys = candidates.map(normHeader);
+            for (let i = 0; i < headers.length; i++) {
+                const h = normHeader(headers[i]);
+                if (candidateKeys.includes(h) || candidateKeys.some(c => h.includes(c) || c.includes(h))) return i;
+            }
+            return fallback;
+        };
+        const ownerIdx = findIdx(['Owner', 'Name'], 1);
+        const emailIdx = findIdx(['Email', 'E-Mail'], 2);
+        const teamIdx = findIdx(['Team'], 3);
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const row = rows[i] || [];
+            const owner = String(row[ownerIdx] || '').trim();
+            const email = String(row[emailIdx] || '').toLowerCase().trim();
+            const team = oscNormalizeQueueAssignment(row[teamIdx]);
+            if (!email || !owner || team !== 'ERS') continue;
+            map[email] = { name: owner, email, team: 'ERS' };
+            ownerNameToTeam[owner] = 'ERS';
+        }
+        // Adam owns his own ERS-created VROs even when he has no state row.
+        if (!map['ahargis@ameritfleet.com']) {
+            map['ahargis@ameritfleet.com'] = { name: 'Adam Hargis', email: 'ahargis@ameritfleet.com', team: 'ERS' };
+            ownerNameToTeam['Adam Hargis'] = 'ERS';
+        }
+        return map;
+    }
+
+    function oscBuildPreapprovedErsRepClassSet(repClassRawAOA) {
+        const set = new Set();
+        const rows = Array.isArray(repClassRawAOA) ? repClassRawAOA : [];
+        if (!rows.length) {
+            ['BRINKS ERSA','GARDA ERSA','US FOODS ERSA','CL ERSA','FERGUSON ERSA','FRONTIER ERSA','PTR ERSA','QUANTIX ERSA'].forEach(v => set.add(oscNormalizeRepClassKey(v)));
+            return set;
+        }
+        let headerIdx = -1;
+        let preIdx = 3;
+        for (let i = 0; i < Math.min(20, rows.length); i++) {
+            const row = rows[i] || [];
+            const normalized = row.map(v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''));
+            const idx = normalized.findIndex(h => h.includes('PREAPPROVED') && h.includes('ERS') && h.includes('REPCLASS'));
+            if (idx >= 0) { headerIdx = i; preIdx = idx; break; }
+        }
+        if (headerIdx < 0) headerIdx = 0;
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const val = String((rows[i] || [])[preIdx] || '').trim();
+            const key = oscNormalizeRepClassKey(val);
+            if (key) set.add(key);
+        }
+        if (!set.size) ['BRINKS ERSA','GARDA ERSA','US FOODS ERSA','CL ERSA','FERGUSON ERSA','FRONTIER ERSA','PTR ERSA','QUANTIX ERSA'].forEach(v => set.add(oscNormalizeRepClassKey(v)));
+        return set;
+    }
+
+    function oscErsExpectedRepClassForCustomer(customerText) {
+        const raw = String(customerText || '').toUpperCase();
+        if (!raw) return '';
+        if (raw.includes('US FOODS') || raw.includes('US FOOD')) return 'US FOODS ERSA';
+        if (raw.includes('GARDA')) return 'GARDA ERSA';
+        if (raw.includes('BRINKS') || raw.includes('BRINK')) return 'BRINKS ERSA';
+        if (raw.includes('CL TRANSPORT') || raw.includes('C L TRANSPORT')) return 'CL ERSA';
+        if (raw.includes('PREMIER TRUCK RENTAL') || raw.includes('PREMIER') || raw.includes('PTR')) return 'PTR ERSA';
+        if (raw.includes('QUANTIX')) return 'QUANTIX ERSA';
+        if (raw.includes('FERGUSON')) return 'FERGUSON ERSA';
+        if (raw.includes('FRONTIER')) return 'FRONTIER ERSA';
+        return '';
+    }
+
+    function oscErsCustomerDisplayFromText(rawText, ro) {
+        const raw = String(rawText || ro?.rawCustomerLocation || ro?.customer || ro?.preBillingCustomer || ro?.custKey || '').trim();
+        const upper = raw.toUpperCase();
+        if (upper.includes('US FOODS') || upper.includes('US FOOD')) return 'US FOODS';
+        if (upper.includes('GARDA')) return 'GARDA';
+        if (upper.includes('BRINKS') || upper.includes('BRINK')) return 'BRINKS';
+        if (upper.includes('CL TRANSPORT') || upper.includes('C L TRANSPORT')) return 'CL TRANSPORT';
+        if (upper.includes('PREMIER TRUCK RENTAL') || upper.includes('PREMIER') || upper.includes('PTR')) return 'PTR / PREMIER TRUCK RENTAL';
+        if (upper.includes('QUANTIX')) return 'QUANTIX';
+        if (upper.includes('FERGUSON')) return 'FERGUSON';
+        if (upper.includes('FRONTIER')) return 'FRONTIER';
+        return ro?.preBillingCustomer || ro?.custKey || raw || 'UNKNOWN CUSTOMER';
+    }
+
+    function oscErsIsReportableStatus(status) {
+        const s = String(status || '').toUpperCase();
+        if (!s) return true;
+        if (s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED')) return false;
+        return true;
+    }
+
+    function oscErsStatusCategory(status) {
+        const s = String(status || '').toUpperCase();
+        if (s.includes('COMPLETED')) return 'Completed';
+        if (s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED')) return 'Closed / Final Charges';
+        return 'Open';
+    }
+
+    function oscFindProcessedRoByNumber(roNum) {
+        const key = normalizeOrderKey(roNum);
+        return (processedData || []).find(ro => normalizeOrderKey(ro && ro.roNum) === key) || null;
+    }
+
+    function oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA) {
+        const ersMap = oscBuildErsCoordinatorMap(resourceRawAOA);
+        const preapprovedSet = oscBuildPreapprovedErsRepClassSet(repClassRawAOA);
+        window.oscErsCoordinatorMap = ersMap;
+        window.oscPreapprovedErsRepClassSet = preapprovedSet;
+        const rows = [];
+        (vroRaw || []).forEach(vro => {
+            const rowValues = vro && vro.__rowValues ? vro.__rowValues : [];
+            const roNum = normalizeOrderKey((vro && vro.__orderFromColumnH) || getRawCell(rowValues, 7) || getCol(vro, ['Order', 'RO Number', 'RONum', 'AFS RO #']));
+            if (!roNum) return;
+            const ownerEmail = String(getRawCell(rowValues, 13) || getCol(vro, ['Owner', 'Created By', 'Email']) || '').trim().toLowerCase();
+            const coordinator = ersMap[ownerEmail];
+            if (!coordinator) return;
+            const ro = oscFindProcessedRoByNumber(roNum);
+            const status = String((ro && ro.status) || getCol(vro, ['Status']) || getRawCell(rowValues, 14) || '').trim();
+            const customerRaw = String(getRawCell(rowValues, 0) || getCol(vro, ['Customer']) || (ro && ro.rawCustomerLocation) || '').trim();
+            const customerName = oscErsCustomerDisplayFromText(customerRaw, ro);
+            const currentRepClass = String((ro && ro.originalRepClass) || getRawCell(rowValues, 4) || getCol(vro, ['Type', 'REPCLASS', 'Repair Class']) || '').trim();
+            const expectedRepClass = oscErsExpectedRepClassForCustomer(customerRaw + ' ' + customerName);
+            const currentKey = oscNormalizeRepClassKey(currentRepClass);
+            const expectedKey = oscNormalizeRepClassKey(expectedRepClass);
+            const isPreapproved = !!(currentKey && preapprovedSet.has(currentKey));
+            let errorReason = '';
+            if (!currentKey) errorReason = 'Missing REPCLASS';
+            else if (!isPreapproved) errorReason = 'REPCLASS is not preapproved for ERS';
+            else if (expectedKey && currentKey !== expectedKey) errorReason = `Customer requires ${expectedRepClass}`;
+            const isError = !!errorReason;
+            const reportable = oscErsIsReportableStatus(status);
+            if (ro) {
+                ro.isErsCoordinatorCreated = true;
+                ro.ersReportingOnly = true;
+                ro.ersCoordinatorName = coordinator.name;
+                ro.ersCoordinatorEmail = coordinator.email;
+                ro.ersCurrentRepClass = currentRepClass;
+                ro.ersExpectedRepClass = expectedRepClass;
+                ro.ersRepClassMismatch = isError;
+                ro.ersMismatchReason = errorReason;
+                ro.sourceQueue = 'ERS';
+                ro.createdByTeam = 'ERS';
+                ro.createdByName = coordinator.name;
+            }
+            rows.push({
+                coordinator: coordinator.name,
+                coordinatorEmail: coordinator.email,
+                roNum,
+                roUrl: `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum)}`,
+                customerName,
+                rawCustomer: customerRaw,
+                currentRepClass,
+                expectedRepClass,
+                isPreapproved,
+                isError,
+                errorReason: errorReason || 'Correct',
+                status,
+                statusCategory: oscErsStatusCategory(status),
+                reportable,
+                unitNo: (ro && ro.unitNo) || String(getRawCell(rowValues, 3) || getCol(vro, ['Unit No', 'UNITNUMBER', 'Vehicle']) || '').trim(),
+                openedFormatted: (ro && ro.openedFormatted) || String(getRawCell(rowValues, 8) || getCol(vro, ['Opened', 'ROOpenedDate']) || '').trim()
+            });
+        });
+        window.globalErsReportingRows = rows;
+        try { renderErsReportingCoordinatorFilter(); } catch(e) {}
+        return rows;
+    }
+
+    function getErsReportableRows() {
+        return (window.globalErsReportingRows || []).filter(r => r && r.reportable);
+    }
+
+    function renderErsReportingCoordinatorFilter() {
+        const sel = document.getElementById('ers-coordinator-filter');
+        if (!sel) return;
+        const current = sel.value || 'ALL';
+        const names = Array.from(new Set(getErsReportableRows().map(r => r.coordinator).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+        sel.innerHTML = '<option value="ALL">All ERS Coordinators</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        if (names.includes(current)) sel.value = current;
+    }
+
+    function ersScorePill(score) {
+        const n = Number(score) || 0;
+        const cls = n >= 90 ? 'ers-score-green' : (n >= 70 ? 'ers-score-yellow' : 'ers-score-red');
+        return `<span class="ers-score-pill ${cls}">${n}%</span>`;
+    }
+
+    window.setErsReportingSort = function(key) {
+        if (ersReportingSortState.key === key) {
+            ersReportingSortState.direction = ersReportingSortState.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            ersReportingSortState.key = key;
+            ersReportingSortState.direction = key === 'coordinator' ? 'asc' : 'desc';
+        }
+        renderErsReporting();
+    };
+
+    window.toggleErsCoordinatorDetails = function(key) {
+        expandedErsReportingCoordinators[key] = !expandedErsReportingCoordinators[key];
+        renderErsReporting();
+    };
+
+    function getErsCoordinatorGroups() {
+        const selected = (document.getElementById('ers-coordinator-filter') || {}).value || 'ALL';
+        const rows = getErsReportableRows().filter(r => selected === 'ALL' || r.coordinator === selected);
+        const groupMap = {};
+        rows.forEach(r => {
+            const key = r.coordinator || 'Unknown ERS Coordinator';
+            if (!groupMap[key]) groupMap[key] = { coordinator: key, email: r.coordinatorEmail || '', total: 0, correct: 0, errors: 0, rows: [], errorRows: [] };
+            groupMap[key].total += 1;
+            if (r.isError) { groupMap[key].errors += 1; groupMap[key].errorRows.push(r); }
+            else groupMap[key].correct += 1;
+            groupMap[key].rows.push(r);
+        });
+        let groups = Object.values(groupMap).map(g => ({ ...g, score: g.total ? Math.round((g.correct / g.total) * 100) : 100 }));
+        const dir = ersReportingSortState.direction === 'asc' ? 1 : -1;
+        groups.sort((a,b) => {
+            const key = ersReportingSortState.key;
+            if (key === 'coordinator') return a.coordinator.localeCompare(b.coordinator) * dir;
+            const av = Number(a[key] || 0), bv = Number(b[key] || 0);
+            if (av === bv) return a.coordinator.localeCompare(b.coordinator);
+            return (av - bv) * dir;
+        });
+        return groups;
+    }
+
+    window.renderErsReporting = function() {
+        renderErsReportingCoordinatorFilter();
+        const body = document.getElementById('ers-reporting-body');
+        const summary = document.getElementById('ers-reporting-summary');
+        if (!body) return;
+        const allRows = getErsReportableRows();
+        const selected = (document.getElementById('ers-coordinator-filter') || {}).value || 'ALL';
+        const filteredRows = allRows.filter(r => selected === 'ALL' || r.coordinator === selected);
+        const total = filteredRows.length;
+        const errors = filteredRows.filter(r => r.isError).length;
+        const correct = total - errors;
+        const score = total ? Math.round((correct / total) * 100) : 100;
+        const coordinatorCount = new Set(filteredRows.map(r => r.coordinator)).size;
+        if (summary) {
+            summary.innerHTML = `
+                <div class="ers-reporting-summary-card"><div class="summary-label">ERS Classification Score</div><div class="summary-value">${score}%</div><div class="summary-sub">Correct ERS REPCLASS / Total ERS VROs</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">Total ERS VROs</div><div class="summary-value">${total}</div><div class="summary-sub">Open or Completed, excluding Closed / Final Charges</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">Correct</div><div class="summary-value">${correct}</div><div class="summary-sub">Preapproved and customer-matched</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">Errors / Mismatches</div><div class="summary-value">${errors}</div><div class="summary-sub">Needs ERS REPCLASS correction</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">Coordinators</div><div class="summary-value">${coordinatorCount}</div><div class="summary-sub">ERS creators from Resource Table</div></div>`;
+        }
+        const groups = getErsCoordinatorGroups();
+        if (!groups.length) {
+            body.innerHTML = '<tr><td colspan="6"><div class="ers-reporting-message">No ERS-created VROs found for this filter.</div></td></tr>';
+            return;
+        }
+        let html = '';
+        groups.forEach(g => {
+            const key = g.coordinator;
+            const expanded = !!expandedErsReportingCoordinators[key];
+            const scoreHtml = ersScorePill(g.score);
+            const actionText = g.errors ? `<span class="ers-error-pill">${g.errors} need correction</span>` : '<span class="ers-ok-pill">No errors</span>';
+            html += `<tr class="ers-coordinator-row">
+                <td style="text-align:left;"><button class="ers-expand-btn" onclick="toggleErsCoordinatorDetails('${escapeHtml(key).replace(/'/g, '&#39;')}')">${expanded ? '−' : '+'}</button>${escapeHtml(g.coordinator)}<div style="font-size:10px;color:#64748b;font-weight:800;margin-top:3px;">${escapeHtml(g.email || '')}</div></td>
+                <td>${scoreHtml}</td>
+                <td>${g.correct}</td>
+                <td>${g.errors}</td>
+                <td>${g.total}</td>
+                <td>${actionText}</td>
+            </tr>`;
+            if (expanded) {
+                const detailRows = g.errorRows.slice().sort((a,b) => (a.customerName || '').localeCompare(b.customerName || '') || (a.roNum || '').localeCompare(b.roNum || ''));
+                let detailHtml = '';
+                if (!detailRows.length) {
+                    detailHtml = '<tr><td colspan="7" style="text-align:center;color:#64748b;font-weight:800;">No error-state VROs for this coordinator.</td></tr>';
+                } else {
+                    detailRows.forEach(r => {
+                        detailHtml += `<tr>
+                            <td>${escapeHtml(r.customerName || '')}</td>
+                            <td><a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum || '')}</a></td>
+                            <td>${escapeHtml(r.currentRepClass || '')}</td>
+                            <td>${escapeHtml(r.expectedRepClass || 'Preapproved ERS REPCLASS')}</td>
+                            <td>${escapeHtml(r.statusCategory || '')}</td>
+                            <td>${escapeHtml(r.status || '')}</td>
+                            <td><span class="ers-error-pill">${escapeHtml(r.errorReason || '')}</span></td>
+                        </tr>`;
+                    });
+                }
+                html += `<tr><td colspan="6" class="ers-detail-cell"><div class="ers-detail-wrap">
+                    <table class="ers-detail-table">
+                        <thead><tr><th>Customer Name</th><th>VRO Number</th><th>Current REPCLASS</th><th>Expected REPCLASS</th><th>Open / Completed</th><th>Status</th><th>Error / Mismatch</th></tr></thead>
+                        <tbody>${detailHtml}</tbody>
+                    </table>
+                </div></td></tr>`;
+            }
+        });
+        body.innerHTML = html;
+    };
+
+    window.exportErsReportingToExcel = function() {
+        const selected = (document.getElementById('ers-coordinator-filter') || {}).value || 'ALL';
+        const rows = getErsReportableRows().filter(r => selected === 'ALL' || r.coordinator === selected);
+        const aoa = [[
+            'Coordinator', 'Coordinator Email', 'Score Status', 'Error / Mismatch', 'Error Reason', 'Customer Name', 'VRO Number', 'VRO Link',
+            'Current REPCLASS', 'Expected REPCLASS', 'Is Preapproved ERS REPCLASS', 'Status Category', 'Status', 'Unit No', 'Opened Date'
+        ]];
+        rows.forEach(r => {
+            aoa.push([
+                r.coordinator || '', r.coordinatorEmail || '', r.isError ? 'ERROR' : 'CORRECT', r.isError ? 'YES' : 'NO', r.errorReason || '',
+                r.customerName || '', r.roNum || '', r.roUrl || '', r.currentRepClass || '', r.expectedRepClass || '', r.isPreapproved ? 'YES' : 'NO',
+                r.statusCategory || '', r.status || '', r.unitNo || '', r.openedFormatted || ''
+            ]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [
+            {wch:24},{wch:30},{wch:12},{wch:14},{wch:36},{wch:24},{wch:18},{wch:70},{wch:22},{wch:24},{wch:24},{wch:16},{wch:24},{wch:18},{wch:18}
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'ERS Reporting');
+        const suffix = selected === 'ALL' ? 'ALL' : selected.replace(/[^A-Za-z0-9]+/g, '_');
+        XLSX.writeFile(wb, `OSC_ERS_Reporting_${suffix}_${getLocalDateKey(new Date())}.xlsx`);
+    };
+
     function oscApplyRepClassQueueRouting(resourceRawAOA, repClassRawAOA) {
         const repClassQueueMap = oscBuildRepClassQueueMap(repClassRawAOA);
         const stateTeamOwnerMap = oscBuildStateTeamOwnerMap(resourceRawAOA);
@@ -9298,6 +9733,16 @@
 
         (processedData || []).forEach(ro => {
             if (!ro) return;
+
+            if (ro.isErsCoordinatorCreated || ro.ersReportingOnly) {
+                ro.sourceQueue = 'ERS';
+                ro.repClassQueueAssignment = 'ERS';
+                ro.isErsReportingOnly = true;
+                oscClearQueueOwnership(ro, 'ERS REPORTING');
+                ro.createdByTeam = 'ERS';
+                ro.ersReportingOnly = true;
+                return;
+            }
 
             const repClassKey = oscNormalizeRepClassKey(
                 ro.originalRepClass ||
@@ -9376,10 +9821,14 @@
     processExcelData = function(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA) {
         const result = oscOriginalProcessExcelData.apply(this, arguments);
         try {
+            // ERS Reporting: VRO Export Column N owner email identifies ERS-created work.
+            // ERS-created VROs are reporting-only and must not appear in PM or Vended Repair tiles.
+            oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA);
             // PM and Vended Repair ownership is driven by REPCLASS queue assignment + Resource Table state owner.
             // Firebase Storage loading and manual upload both pass through this same wrapper.
             // VRO Export Column N / creator is not used to create independent owner tiles.
             oscApplyRepClassQueueRouting(resourceRawAOA, repClassRawAOA);
+            renderErsReportingCoordinatorFilter();
         } catch (e) {
             console.warn('OSC drilldown owner/branch/repclass routing cleanup failed:', e);
         }
