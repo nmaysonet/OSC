@@ -9427,11 +9427,8 @@
             map[email] = { name: owner, email, team: 'ERS' };
             ownerNameToTeam[owner] = 'ERS';
         }
-        // Adam owns his own ERS-created VROs even when he has no state row.
-        if (!map['ahargis@ameritfleet.com']) {
-            map['ahargis@ameritfleet.com'] = { name: 'Adam Hargis', email: 'ahargis@ameritfleet.com', team: 'ERS' };
-            ownerNameToTeam['Adam Hargis'] = 'ERS';
-        }
+        // ERS Reporting only includes coordinators whose Resource Table Team is ERS.
+        // Adam Hargis is Vended Repair, not ERS, so he is intentionally not added here.
         return map;
     }
 
@@ -9505,6 +9502,44 @@
     function oscFindProcessedRoByNumber(roNum) {
         const key = normalizeOrderKey(roNum);
         return (processedData || []).find(ro => normalizeOrderKey(ro && ro.roNum) === key) || null;
+    }
+
+
+    function oscBuildColumnNOwnerEmailByOrder(vroRaw) {
+        const map = {};
+        (vroRaw || []).forEach(vro => {
+            const rowValues = vro && vro.__rowValues ? vro.__rowValues : [];
+            const roNum = normalizeOrderKey((vro && vro.__orderFromColumnH) || getRawCell(rowValues, 7) || getCol(vro, ['Order', 'RO Number', 'RONum', 'AFS RO #']));
+            if (!roNum) return;
+            // VRO Export Column N is index 13. This is the only owner/email override allowed for Adam Hargis.
+            const ownerEmail = String(getRawCell(rowValues, 13) || getCol(vro, ['Owner', 'Created By', 'Email']) || '').trim().toLowerCase();
+            if (ownerEmail) map[roNum] = ownerEmail;
+        });
+        return map;
+    }
+
+    function oscIsAdamHargisColumnNOwner(ro) {
+        const roKey = normalizeOrderKey(ro && ro.roNum);
+        const ownerEmail = roKey && window.oscColumnNOwnerEmailByOrder ? String(window.oscColumnNOwnerEmailByOrder[roKey] || '').toLowerCase().trim() : '';
+        return ownerEmail === 'ahargis@ameritfleet.com';
+    }
+
+    function oscAssignAdamHargisVendedOwner(ro) {
+        if (!ro) return;
+        ro.kpiOwners = ['Adam Hargis'];
+        ro.drilldownOwners = ['Adam Hargis'];
+        ro.tileOwners = ['Adam Hargis'];
+        ro.owner = 'Adam Hargis';
+        ro.repClassStateOwner = 'Adam Hargis';
+        ro.repClassStateCode = '';
+        ro.columnNOwner = 'ahargis@ameritfleet.com';
+        ro.createdByName = 'Adam Hargis';
+        ro.createdByTeam = 'VENDED REPAIR';
+        ro.sourceQueue = 'VENDED REPAIR';
+        ro.isAdamHargisVendedOwner = true;
+        ro.missingStateQueueOwner = false;
+        ro.missingStateCode = false;
+        ownerNameToTeam['Adam Hargis'] = 'VENDED REPAIR';
     }
 
     function oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA) {
@@ -9772,6 +9807,14 @@
                 return;
             }
 
+            // Adam Hargis is not an ERS coordinator and does not own states.
+            // His Vended Repair tile is based only on VRO Export Column N Owner = ahargis@ameritfleet.com.
+            // Those rows must not roll into other PM/Vended state-owner tiles.
+            if (effectiveQueue === 'VENDED REPAIR' && oscIsAdamHargisColumnNOwner(ro)) {
+                oscAssignAdamHargisVendedOwner(ro);
+                return;
+            }
+
             if (effectiveQueue !== 'PM' && effectiveQueue !== 'VENDED REPAIR') {
                 oscClearQueueOwnership(ro, effectiveQueue);
                 return;
@@ -9821,7 +9864,9 @@
     processExcelData = function(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA) {
         const result = oscOriginalProcessExcelData.apply(this, arguments);
         try {
-            // ERS Reporting: VRO Export Column N owner email identifies ERS-created work.
+            // Fixed Column N owner index for special handling and reporting.
+            window.oscColumnNOwnerEmailByOrder = oscBuildColumnNOwnerEmailByOrder(vroRaw);
+            // ERS Reporting: VRO Export Column N owner email identifies ERS-created work only when the Resource Table Team is ERS.
             // ERS-created VROs are reporting-only and must not appear in PM or Vended Repair tiles.
             oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA);
             // PM and Vended Repair ownership is driven by REPCLASS queue assignment + Resource Table state owner.
