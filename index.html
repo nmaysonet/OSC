@@ -9575,9 +9575,11 @@
             const currentKey = oscNormalizeErsRepClassCompareKey(currentRepClass);
             const expectedKey = oscNormalizeErsRepClassCompareKey(expectedRepClass);
             const isPreapproved = !!(currentKey && preapprovedSet.has(currentKey));
+            const isGlobalApprovedErsClass = currentKey === oscNormalizeErsRepClassCompareKey('OSC RD');
             let errorReason = '';
             if (!currentKey) errorReason = 'Missing REPCLASS';
             else if (!isPreapproved) errorReason = 'REPCLASS is not preapproved for ERS';
+            else if (isGlobalApprovedErsClass) errorReason = '';
             else if (expectedKey && currentKey !== expectedKey) errorReason = `Customer requires ${expectedRepClass}`;
             const isError = !!errorReason;
             const reportable = oscErsIsReportableStatus(status);
