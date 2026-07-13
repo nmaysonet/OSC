@@ -404,10 +404,10 @@
         .ers-reporting-summary-card .summary-value { font-size:20px; font-weight:900; color:#334155; line-height:1.1; }
         .ers-reporting-summary-card .summary-sub { font-size:10px; font-weight:800; color:#64748b; margin-top:3px; line-height:1.25; }
         .ers-reporting-table { min-width:1180px; table-layout:fixed; }
-        .ers-reporting-table th { background:#1F4E78; color:#fff; border-bottom:2px solid #17365d; padding:8px 6px; font-size:10px; line-height:1.15; text-align:center; vertical-align:middle; white-space:normal; }
+        .ers-reporting-table th { background:#1F4E78; color:#fff; border-bottom:2px solid #17365d; padding:8px 8px; font-size:10px; line-height:1.15; text-align:left; vertical-align:middle; white-space:normal; }
         .ers-reporting-table th:hover { background:#17365d; }
-        .ers-reporting-table td { font-size:12px; padding:9px 8px; text-align:center; vertical-align:middle; }
-        .ers-sort-btn { width:100%; background:transparent; border:none; color:inherit; font:inherit; font-weight:900; text-transform:uppercase; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; line-height:1.15; text-align:center; white-space:normal; padding:0; }
+        .ers-reporting-table td { font-size:12px; padding:9px 8px; text-align:left; vertical-align:middle; }
+        .ers-sort-btn { width:100%; background:transparent; border:none; color:inherit; font:inherit; font-weight:900; text-transform:uppercase; cursor:pointer; display:inline-flex; align-items:center; justify-content:flex-start; gap:4px; line-height:1.15; text-align:left; white-space:normal; padding:0; }
         .ers-sort-btn:hover { color:#fff; opacity:.92; }
         .ers-coordinator-row td { background:#fff; font-weight:900; }
         .ers-coordinator-row:hover td { background:#f8fafc; }
@@ -416,8 +416,8 @@
         .ers-detail-cell { background:#f8fafc !important; padding:0 !important; }
         .ers-detail-wrap { padding:12px; }
         .ers-detail-table { min-width:1050px; table-layout:fixed; border:1px solid #e2e8f0; background:#fff; }
-        .ers-detail-table th { background:#111827; color:#fff; font-size:10px; padding:7px 6px; }
-        .ers-detail-table td { font-size:11px; padding:8px 6px; text-align:left; }
+        .ers-detail-table th { background:#111827; color:#fff; font-size:10px; padding:7px 8px; text-align:left; }
+        .ers-detail-table td { font-size:11px; padding:8px 8px; text-align:left; }
         .ers-reporting-table th, .ers-reporting-table td,
         .ers-detail-table th, .ers-detail-table td { text-align:left !important; }
         .ers-score-pill { display:inline-flex; align-items:center; justify-content:center; min-width:58px; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:900; }
@@ -829,7 +829,7 @@
             <div class="view-title">
                 <span style="font-weight: 700;">ERS Reporting</span>
                 <div class="controls-group" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <button class="btn-green" onclick="exportErsReportingToExcel()">&#11139; Export ERS Report</button>
+                    <button class="btn-green" onclick="exportErsReportingToExcel()">&#11139; Export ERS Errors</button>
                 </div>
             </div>
             <div class="drilldown-container">
@@ -9438,7 +9438,7 @@
         const set = new Set();
         const rows = Array.isArray(repClassRawAOA) ? repClassRawAOA : [];
         if (!rows.length) {
-            ['BRINKS ERSA','GARDA ERSA','US FOOD ERSA','CL ERSA','FERGUSON ERSA','FRONTIER ERS','PTR ERSA','QUANTIX ERSA'].forEach(v => set.add(oscNormalizeErsRepClassCompareKey(v)));
+            ['BRINKS ERSA','GARDA ERSA','US FOOD ERSA','CL ERSA','FERGUSON ERS','FRONTIER ERS','PTR ERSA','QUANTIX ERSA','OSC RD'].forEach(v => set.add(oscNormalizeErsRepClassCompareKey(v)));
             return set;
         }
         let headerIdx = -1;
@@ -9455,7 +9455,10 @@
             const key = oscNormalizeErsRepClassCompareKey(val);
             if (key) set.add(key);
         }
-        if (!set.size) ['BRINKS ERSA','GARDA ERSA','US FOOD ERSA','CL ERSA','FERGUSON ERSA','FRONTIER ERS','PTR ERSA','QUANTIX ERSA'].forEach(v => set.add(oscNormalizeErsRepClassCompareKey(v)));
+        if (!set.size) ['BRINKS ERSA','GARDA ERSA','US FOOD ERSA','CL ERSA','FERGUSON ERS','FRONTIER ERS','PTR ERSA','QUANTIX ERSA','OSC RD'].forEach(v => set.add(oscNormalizeErsRepClassCompareKey(v)));
+        // Enforce corrected ERS standards even if Firebase is still serving an older workbook.
+        ['FERGUSON ERSA','FRONTIER ERSA','US FOODS ERSA'].forEach(v => set.delete(oscNormalizeErsRepClassCompareKey(v)));
+        ['FERGUSON ERS','FRONTIER ERS','US FOOD ERSA','OSC RD'].forEach(v => set.add(oscNormalizeErsRepClassCompareKey(v)));
         return set;
     }
 
@@ -9468,7 +9471,7 @@
         if (raw.includes('CL TRANSPORT') || raw.includes('C L TRANSPORT')) return 'CL ERSA';
         if (raw.includes('PREMIER TRUCK RENTAL') || raw.includes('PREMIER') || raw.includes('PTR')) return 'PTR ERSA';
         if (raw.includes('QUANTIX')) return 'QUANTIX ERSA';
-        if (raw.includes('FERGUSON')) return 'FERGUSON ERSA';
+        if (raw.includes('FERGUSON')) return 'FERGUSON ERS';
         if (raw.includes('FRONTIER')) return 'FRONTIER ERS';
         return '';
     }
@@ -9744,26 +9747,97 @@
 
     window.exportErsReportingToExcel = function() {
         const selected = (document.getElementById('ers-coordinator-filter') || {}).value || 'ALL';
-        const rows = getErsReportableRows().filter(r => selected === 'ALL' || r.coordinator === selected);
+        const rows = getErsReportableRows()
+            .filter(r => selected === 'ALL' || r.coordinator === selected)
+            .filter(r => r && r.isError)
+            .sort((a,b) =>
+                (a.coordinator || '').localeCompare(b.coordinator || '') ||
+                (a.customerName || '').localeCompare(b.customerName || '') ||
+                (a.roNum || '').localeCompare(b.roNum || '')
+            );
+
         const aoa = [[
-            'Coordinator', 'Coordinator Email', 'Score Status', 'Error / Mismatch', 'Error Reason', 'Customer Name', 'VRO Number', 'VRO Link',
-            'Current REPCLASS', 'Expected REPCLASS', 'Is Preapproved ERS REPCLASS', 'Status Category', 'Status', 'Unit No', 'Opened Date'
+            'Coordinator',
+            'Coordinator Email',
+            'Customer Name',
+            'VRO Number',
+            'Current REPCLASS',
+            'Expected REPCLASS',
+            'Correction Needed',
+            'Open / Completed',
+            'Status',
+            'Unit No',
+            'Opened Date'
         ]];
+
         rows.forEach(r => {
             aoa.push([
-                r.coordinator || '', r.coordinatorEmail || '', r.isError ? 'ERROR' : 'CORRECT', r.isError ? 'YES' : 'NO', r.errorReason || '',
-                r.customerName || '', r.roNum || '', r.roUrl || '', r.currentRepClass || '', r.expectedRepClass || '', r.isPreapproved ? 'YES' : 'NO',
-                r.statusCategory || '', r.status || '', r.unitNo || '', r.openedFormatted || ''
+                r.coordinator || '',
+                r.coordinatorEmail || '',
+                r.customerName || '',
+                r.roNum || '',
+                r.currentRepClass || '',
+                r.expectedRepClass || 'Preapproved ERS REPCLASS',
+                r.errorReason || 'Mismatch / error',
+                r.statusCategory || '',
+                r.status || '',
+                r.unitNo || '',
+                r.openedFormatted || ''
             ]);
         });
+
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws['!cols'] = [
-            {wch:24},{wch:30},{wch:12},{wch:14},{wch:36},{wch:24},{wch:18},{wch:70},{wch:22},{wch:24},{wch:24},{wch:16},{wch:24},{wch:18},{wch:18}
+            {wch:24},{wch:30},{wch:24},{wch:18},{wch:22},{wch:24},{wch:38},{wch:16},{wch:26},{wch:18},{wch:18}
         ];
+        ws['!autofilter'] = { ref: `A1:K${Math.max(aoa.length, 1)}` };
+
+        const headerStyle = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { patternType: 'solid', fgColor: { rgb: '1F4E78' } },
+            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+            border: {
+                top: { style: 'thin', color: { rgb: '17365D' } },
+                bottom: { style: 'thin', color: { rgb: '17365D' } },
+                left: { style: 'thin', color: { rgb: '17365D' } },
+                right: { style: 'thin', color: { rgb: '17365D' } }
+            }
+        };
+        const bodyStyle = {
+            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+            border: {
+                bottom: { style: 'thin', color: { rgb: 'D9E2EC' } },
+                left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+            }
+        };
+        const linkStyle = {
+            ...bodyStyle,
+            font: { color: { rgb: '0563C1' }, underline: true, bold: true }
+        };
+
+        for (let c = 0; c < aoa[0].length; c++) {
+            const addr = XLSX.utils.encode_cell({ r: 0, c });
+            if (ws[addr]) ws[addr].s = headerStyle;
+        }
+        for (let r = 1; r < aoa.length; r++) {
+            for (let c = 0; c < aoa[0].length; c++) {
+                const addr = XLSX.utils.encode_cell({ r, c });
+                if (!ws[addr]) continue;
+                ws[addr].s = bodyStyle;
+            }
+            const sourceRow = rows[r - 1];
+            const vroCell = XLSX.utils.encode_cell({ r, c: 3 });
+            if (ws[vroCell] && sourceRow && sourceRow.roUrl) {
+                ws[vroCell].l = { Target: sourceRow.roUrl, Tooltip: 'Open VRO in AFS Hub' };
+                ws[vroCell].s = linkStyle;
+            }
+        }
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'ERS Reporting');
+        XLSX.utils.book_append_sheet(wb, ws, 'ERS Errors');
         const suffix = selected === 'ALL' ? 'ALL' : selected.replace(/[^A-Za-z0-9]+/g, '_');
-        XLSX.writeFile(wb, `OSC_ERS_Reporting_${suffix}_${getLocalDateKey(new Date())}.xlsx`);
+        XLSX.writeFile(wb, `OSC_ERS_Errors_${suffix}_${getLocalDateKey(new Date())}.xlsx`);
     };
 
     function oscApplyRepClassQueueRouting(resourceRawAOA, repClassRawAOA) {
