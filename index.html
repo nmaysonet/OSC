@@ -3888,10 +3888,22 @@
 
         function isVendedSummarySite(unitRecord) {
             if (!unitRecord) return false;
-            if (unitRecord.isDedicatedShop) return false;
 
-            const team = unitRecord.siteTeam || getBranchTeamFromMap(unitRecord.branch);
-            return String(team || '').trim().toUpperCase() === 'VENDED REPAIR';
+            const ownerText = String(unitRecord.owner || '').trim().toUpperCase();
+            const branchText = String(unitRecord.branch || '').trim().toUpperCase();
+            const teamText = String(unitRecord.siteTeam || getBranchTeamFromMap(unitRecord.branch) || '').trim().toUpperCase();
+
+            // New OSC+ uses state-level Resource Table ownership instead of branch/team rows.
+            // That means many Garda vended sites no longer have a branch-level Team value.
+            // Do not drop those from Consolidation Summary just because Team is blank/N/A.
+            if (unitRecord.isDedicatedShop || ownerText === 'DEDICATED' || /\bDEDICATED\b/.test(branchText)) return false;
+
+            // If a real non-vended team is present, keep it out of the VDR summary.
+            if (teamText === 'PM' || teamText === 'PREVENTATIVE MAINTENANCE' || teamText === 'PREVENTIVE MAINTENANCE' || teamText === 'ERS') return false;
+
+            // Explicit Vended Repair is valid. Blank / N/A / NOT FOUND is also valid for Garda OOS sites
+            // because the OOS tab is now the source of the branch population while Resource Table owns states.
+            return true;
         }
 
         function getRoSpendInfo(roOrRoNum) {
@@ -6356,9 +6368,9 @@
                 let owner = String(row[13] || '').trim();
                 
                 if (!unit) continue;
-                let isDedicatedShop = owner.toUpperCase() === 'DEDICATED';
+                let isDedicatedShop = owner.toUpperCase() === 'DEDICATED' || /\bDEDICATED\b/i.test(branch);
                 let siteTeam = getBranchTeamFromMap(branch, branchToTeam);
-                let isVendedSite = !isDedicatedShop && siteTeam === 'VENDED REPAIR';
+                let isVendedSite = !isDedicatedShop && !(String(siteTeam || '').trim().toUpperCase() === 'PM' || String(siteTeam || '').trim().toUpperCase() === 'ERS');
                 if (!owner) owner = 'Unassigned';
                 
                 masterUnits[unit] = {
