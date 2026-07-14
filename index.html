@@ -437,16 +437,18 @@
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
         .grouped-ro-item { margin-bottom: 8px; }
         .grouped-ro-item:last-child { margin-bottom: 0; }
-        .prebilling-tile-metrics { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; }
-        .prebilling-metric { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 6px; text-align:center; }
-        .prebilling-metric .title { font-size:9px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:.35px; }
-        .prebilling-metric .num { font-size:18px; font-weight:900; color:#334155; margin-top:4px; }
-        .prebilling-enter { position:absolute; top:12px; right:12px; background:#111827; color:#fff; border:none; border-radius:6px; padding:7px 9px; font-size:10px; font-weight:900; text-transform:uppercase; cursor:pointer; line-height:1.05; box-shadow:0 2px 5px rgba(15,23,42,.18); }
-        .prebilling-enter:hover { background:var(--gold); color:#222; }
-        .prebilling-context-note { font-size:11px; color:#64748b; font-weight:800; margin-top:8px; line-height:1.3; max-width:92%; }
-        .prebilling-table { min-width: 1280px; }
-        .prebilling-table th, .prebilling-table td { font-size:11px; vertical-align:top; }
-        .prebilling-table th { background:#111827; color:#fff; }
+
+
+        .customer-aid-btn { width:20px; height:20px; border-radius:50%; border:1px solid #2563eb; background:#eff6ff; color:#2563eb; font-size:12px; font-weight:900; line-height:18px; text-align:center; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; box-shadow:0 1px 2px rgba(37,99,235,0.18); font-family: Georgia, serif; font-style:italic; }
+        .customer-aid-btn:hover { background:#2563eb; color:#fff; transform:translateY(-1px); }
+        .customer-aid-modal-box { width:420px; max-width:92vw; border-top:5px solid #2563eb; }
+        .customer-aid-subtitle { font-size:11px; font-weight:800; color:#64748b; margin-top:-8px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.35px; }
+        .customer-aid-fields { display:flex; flex-direction:column; gap:7px; }
+        .customer-aid-field { display:flex; gap:8px; align-items:flex-start; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; padding:8px 9px; }
+        .customer-aid-label { min-width:130px; font-size:10px; font-weight:900; color:#475569; text-transform:uppercase; letter-spacing:.35px; }
+        .customer-aid-value { flex:1; font-size:12px; font-weight:800; color:#1f2937; line-height:1.25; white-space:pre-wrap; word-break:break-word; }
+        .customer-aid-empty { color:#64748b; font-size:12px; font-weight:800; text-align:center; padding:10px; }
+
 
     </style>
 </head>
@@ -489,12 +491,10 @@
         <div class="submenu" id="queues-submenu">
             <div class="menu-item" id="menu-vended" onclick="navigate('vended-view', this)">Vended Repair Queue</div>
             <div class="menu-item" id="menu-pm" onclick="navigate('pm-view', this)">PM Queue</div>
-            <!-- <div class="menu-item" id="menu-prebilling" onclick="navigate('prebilling-view', this)">Pre-Billing Queue</div> -->
         </div>
         <div class="menu-item" onclick="window.location.href='vendor.html'">Vendor Search</div>
         <div class="menu-item submenu-toggle" id="menu-garda" onclick="toggleGardaMenu()">Reporting Menu</div>
         <div class="submenu" id="garda-submenu">
-             <!-- <div class="menu-item" id="menu-spend" onclick="navigate('spend-view', this)">Weekly Spend Matrix</div> -->
             <div class="menu-item" id="menu-summary" onclick="navigate('summary-view', this)">Consolidation Summary</div>
             <div class="menu-item" id="menu-compliance-reporting" onclick="navigate('compliance-reporting-view', this)">Compliance Reporting</div>
             <div class="menu-item" id="menu-ers-reporting" onclick="navigate('ers-reporting-view', this); renderErsReporting();">ERS Reporting</div>
@@ -591,89 +591,6 @@
                 <button class="filter-btn" data-filter="PRIORITY" onclick="setFilter('PRIORITY')">Priority</button>
             </div>
             <div class="kpi-grid" id="vended-kpi-container"></div>
-        </div>
-
-        <div id="prebilling-view" class="view-section">
-            <div class="view-title">
-                <span style="font-weight: 700;">Pre-Billing Queue</span>
-            </div>
-            <div style="font-size:12px; color:#64748b; font-weight:800; margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px;">
-                Completed work with an AI repair-class transfer before billing. Tiles are grouped by customer from VRO Export Column A.
-            </div>
-            <div class="kpi-grid" id="prebilling-kpi-container"></div>
-        </div>
-
-        <div id="spend-view" class="view-section">
-            <div class="view-title">Weekly Spend Matrix</div>
-            <div class="sub-tabs-container">
-                <button class="sub-tab active" onclick="switchSpendTab('sub-weekly-spend', this)">Weekly Spend Matrix</button>
-                <button class="sub-tab" onclick="switchSpendTab('sub-spend-change-log', this)">Spend / Status Change Log</button>
-                <button class="sub-tab" onclick="switchSpendTab('sub-weekly-history', this)">Weekly History</button>
-            </div>
-            <div id="sub-weekly-spend" class="sub-section active">
-                <div style="font-size:12px; color:#64748b; font-weight:900; margin-bottom:12px; background:#fff7ed; border:1px solid #f59e0b; border-radius:6px; padding:9px 12px;">Garda-specific reporting only: all spend totals, history, and change logs are filtered to Garda VROs.</div>
-                <div id="spend-dashboard-widget"></div>
-            </div>
-            <div id="sub-spend-change-log" class="sub-section">
-                <div class="drilldown-container">
-                    <div class="view-title" style="margin-bottom: 10px;">
-                        <span style="font-weight:700;">Spend / Status Change Log</span>
-                        <div class="controls-group" style="display:flex; align-items:center;">
-                            <button class="btn-green" onclick="exportSpendChangeLogToExcel()">&#11139; Export to XLSX</button>
-                        </div>
-                    </div>
-                    <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:12px;">
-                        Tracks each Firebase-detected status or RO Detail spend change for spend-governed VROs through closure.
-                    </div>
-                    <div class="table-wrapper">
-                        <table id="spend-change-log-table">
-                            <colgroup>
-                                <col style="width: 12%;">
-                                <col style="width: 12%;">
-                                <col style="width: 9%;">
-                                <col style="width: 15%;">
-                                <col style="width: 12%;">
-                                <col style="width: 11%;">
-                                <col style="width: 11%;">
-                                <col style="width: 11%;">
-                                <col style="width: 9%;">
-                                <col style="width: 9%;">
-                                <col style="width: 9%;">
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('changedAt')">Changed At <span class="spend-log-sort-indicator" data-sort-indicator="changedAt">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('roNumber')">AFS RO # <span class="spend-log-sort-indicator" data-sort-indicator="roNumber">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('unitNo')">Unit No <span class="spend-log-sort-indicator" data-sort-indicator="unitNo">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('branch')">Branch / Site <span class="spend-log-sort-indicator" data-sort-indicator="branch">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('owner')">Owner <span class="spend-log-sort-indicator" data-sort-indicator="owner">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('changeType')">Change Type <span class="spend-log-sort-indicator" data-sort-indicator="changeType">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('previousStatus')">Previous Status <span class="spend-log-sort-indicator" data-sort-indicator="previousStatus">↕</span></button></th>
-                                    <th><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('currentStatus')">Current Status <span class="spend-log-sort-indicator" data-sort-indicator="currentStatus">↕</span></button></th>
-                                    <th style="text-align:right;"><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('previousSpend')">Previous Spend <span class="spend-log-sort-indicator" data-sort-indicator="previousSpend">↕</span></button></th>
-                                    <th style="text-align:right;"><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('currentSpend')">Current Spend <span class="spend-log-sort-indicator" data-sort-indicator="currentSpend">↕</span></button></th>
-                                    <th style="text-align:right;"><button class="spend-log-sort-btn" onclick="sortSpendChangeLog('spendDelta')">Spend Change <span class="spend-log-sort-indicator" data-sort-indicator="spendDelta">↕</span></button></th>
-                                </tr>
-                            </thead>
-                            <tbody id="spend-change-log-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div id="sub-weekly-history" class="sub-section">
-                <div class="drilldown-container">
-                    <div class="view-title" style="margin-bottom: 10px;">
-                        <span style="font-weight:700;">Weekly Spend History</span>
-                        <div class="controls-group" style="display:flex; align-items:center;">
-                            <button class="btn-green" onclick="exportWeeklySpendHistoryToExcel()">&#11139; Export to XLSX</button>
-                        </div>
-                    </div>
-                    <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:12px;">
-                        Shows weekly captured spend totals from Firebase and lets you expand each week to see the VROs locked into spend for that week.
-                    </div>
-                    <div id="weekly-spend-history-body"></div>
-                </div>
-            </div>
         </div>
 
         <div id="person-view" class="view-section">
@@ -916,6 +833,19 @@
                 <button class="btn-cancel" onclick="closeNoteModal()">Cancel</button>
                 <button class="btn-save" onclick="saveNote()">Save Update</button>
             </div>
+        </div>
+    </div>
+
+
+
+    <div id="customer-aid-modal" class="modal-overlay">
+        <div class="modal-box customer-aid-modal-box">
+            <div class="modal-header">
+                <span id="customer-aid-modal-title">Customer Aid</span>
+                <button class="modal-close" onclick="closeCustomerAidModal()">&times;</button>
+            </div>
+            <div id="customer-aid-modal-subtitle" class="customer-aid-subtitle"></div>
+            <div id="customer-aid-modal-body" class="customer-aid-fields"></div>
         </div>
     </div>
 
@@ -1299,6 +1229,7 @@
                 let usefulRawAOA = [];
                 let dodRawAOA = [];
                 let repClassRawAOA = [];
+                let customerAidRawAOA = [];
 
                 workbook.SheetNames.forEach(sheetName => {
                     try {
@@ -1317,6 +1248,8 @@
                             oosRawAOA = aoa;
                         } else if (sheetNameLower.includes('repclass') || sheetNameLower.includes('rep class')) {
                             repClassRawAOA = aoa;
+                        } else if (sheetNameLower.includes('customer aid') || sheetNameLower.includes('customeraid')) {
+                            customerAidRawAOA = aoa;
                         } else if (sheetNameLower.includes('vro export')) {
                             let headerIdx = -1;
                             for (let i = 0; i < Math.min(20, aoa.length); i++) {
@@ -1373,7 +1306,7 @@
                 statusEl.innerText = 'Loading AI Ref.xlsx for Repair Class Compliance...';
                 await loadAiRefFromFirebase();
 
-                processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA);
+                processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
                 try {
                     await syncSpendGovernorWithFirebase();
@@ -1413,6 +1346,7 @@
                 let usefulRawAOA = [];
                 let dodRawAOA = [];
                 let repClassRawAOA = [];
+                let customerAidRawAOA = [];
 
                 workbook.SheetNames.forEach(sheetName => {
                     try {
@@ -1431,6 +1365,8 @@
                             oosRawAOA = aoa;
                         } else if (sheetNameLower.includes('repclass') || sheetNameLower.includes('rep class')) {
                             repClassRawAOA = aoa;
+                        } else if (sheetNameLower.includes('customer aid') || sheetNameLower.includes('customeraid')) {
+                            customerAidRawAOA = aoa;
                         } else if (sheetNameLower.includes('vro export')) {
                             let headerIdx = -1;
                             for (let i = 0; i < Math.min(20, aoa.length); i++) {
@@ -1478,7 +1414,7 @@
                 });
 
                 await loadAiRefFromFirebase();
-                processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA);
+                processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
                 try {
                     await syncSpendGovernorWithFirebase();
@@ -5756,8 +5692,6 @@
             else if(activeView === 'pm-view') renderKPITiles(pmOwners, 'pm-kpi-container', 'pm-view');
             else if(activeView === 'vended-view') renderKPITiles(vendedOwners, 'vended-kpi-container', 'vended-view');
             
-            else if(activeView === 'prebilling-view') renderPreBillingTiles();
-            else if(activeView === 'spend-view') renderSpendQueue();
             else if(activeView === 'compliance-reporting-view') loadComplianceReporting();
             else if(activeView === 'person-view') { if(currentOwnerView) loadPersonDrilldown(currentOwnerView, currentParentView, true); }
             else if(activeView === 'summary-view') {
@@ -5811,21 +5745,20 @@
                 'home-view': 'menu-home',
                 'vended-view': 'menu-vended',
                 'pm-view': 'menu-pm',
-                'prebilling-view': 'menu-prebilling',
-                'spend-view': 'menu-spend',
+                /* Pre-Billing removed from OSC+ */
                 'summary-view': 'menu-summary'
             };
 
             const menuId = target.menuId || viewToMenu[target.viewId] || null;
             const menuElement = menuId ? document.getElementById(menuId) : null;
 
-            if (['vended-view', 'pm-view', 'prebilling-view'].includes(target.viewId) || target.expandQueues) {
+            if (['vended-view', 'pm-view'].includes(target.viewId) || target.expandQueues) {
                 const submenu = document.getElementById('queues-submenu');
                 const toggle = document.getElementById('menu-queues');
                 if (submenu) submenu.classList.add('open');
                 if (toggle) toggle.classList.add('expanded');
             }
-            if (['spend-view', 'summary-view', 'ers-reporting-view'].includes(target.viewId)) {
+            if (['summary-view', 'ers-reporting-view'].includes(target.viewId)) {
                 const submenu = document.getElementById('garda-submenu');
                 const toggle = document.getElementById('menu-garda');
                 if (submenu) submenu.classList.add('open');
@@ -7798,7 +7731,8 @@
                                 let sourcePillHtml = getQueueSourcePillHtml(u.queueSources[idx], isVendedQueue);
                                 let roLinkDisplayHtml = isRepclassOnlyRow ? `<span class="ro-link ro-link-locked" title="Completed work: repclass review only">${escapeHtml(roNum)}</span>` : (isPreWipLocked ? getLockedRoDisplayFromHtml(u.roLinks[idx], roNum) : u.roLinks[idx]);
                                 let lockTooltipHtml = isPreWipLocked && !isRepclassOnlyRow ? getLockTooltipHtml() : '';
-                                let roHtml = `<div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">${statusToggleHtml} ${roLinkDisplayHtml} ${noteBtnHtml} ${sourcePillHtml} ${lockTooltipHtml}</div>`;
+                                let aidBtnHtml = (typeof getCustomerAidInfoButtonHtml === 'function') ? getCustomerAidInfoButtonHtml(rowRo) : '';
+                                let roHtml = `<div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">${statusToggleHtml} ${roLinkDisplayHtml} ${aidBtnHtml} ${noteBtnHtml} ${sourcePillHtml} ${lockTooltipHtml}</div>`;
 
                                 const rowIsOpen = !!(rowRo && rowRo.isOpen);
                                 const rowComplianceEligible = rowIsOpen && isComplianceEligibleRo(rowRo);
@@ -8086,7 +8020,8 @@
                             roLinkHtml = `<a href="https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${ro.roNum}" target="_blank" class="ro-link">${ro.roNum}</a>${dupBadge}`;
                         }
                             
-                        searchUnitsMap[ro.unitNo].roLinks.push(roLinkHtml);
+                        const searchAidBtnHtml = (typeof getCustomerAidInfoButtonHtml === 'function') ? getCustomerAidInfoButtonHtml(ro) : '';
+                        searchUnitsMap[ro.unitNo].roLinks.push(roLinkHtml + searchAidBtnHtml);
                         searchUnitsMap[ro.unitNo].openedDates.push(ro.openedFormatted);
                         searchUnitsMap[ro.unitNo].statuses.push(ro.status);
                         searchUnitsMap[ro.unitNo].ecdCells.push(ecdCell);
@@ -8179,21 +8114,23 @@
                 currentFilter = 'ALL';
             }
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
+            const targetViewEl = document.getElementById(viewId);
+            if (!targetViewEl) { navigate('home-view', document.getElementById('menu-home'), true); return; }
+            targetViewEl.classList.add('active');
             if(viewId !== 'search-view' && viewId !== 'person-view') lastActiveView = viewId;
             if(menuElement) {
                 document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
                 menuElement.classList.add('active');
                 const queuesSubmenu = document.getElementById('queues-submenu');
                 const queuesToggle = document.getElementById('menu-queues');
-                if (['pm-view', 'vended-view', 'prebilling-view'].includes(viewId) && queuesSubmenu && queuesToggle) {
+                if (['pm-view', 'vended-view'].includes(viewId) && queuesSubmenu && queuesToggle) {
                     queuesSubmenu.classList.add('open');
                     queuesToggle.classList.add('expanded');
                     queuesToggle.classList.add('active');
                 }
                 const gardaSubmenu = document.getElementById('garda-submenu');
                 const gardaToggle = document.getElementById('menu-garda');
-                if (['spend-view', 'summary-view', 'compliance-reporting-view', 'ers-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
+                if (['summary-view', 'compliance-reporting-view', 'ers-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
                     gardaSubmenu.classList.add('open');
                     gardaToggle.classList.add('expanded');
                     gardaToggle.classList.add('active');
@@ -8203,9 +8140,7 @@
             if(viewId === 'pm-view') renderKPITiles(pmOwners, 'pm-kpi-container', 'pm-view');
             else if (viewId === 'vended-view') renderKPITiles(vendedOwners, 'vended-kpi-container', 'vended-view');
             
-            else if (viewId === 'prebilling-view') renderPreBillingTiles();
             else if (viewId === 'home-view') renderHomeDashboard();
-            else if (viewId === 'spend-view') renderSpendQueue();
             else if (viewId === 'compliance-reporting-view') loadComplianceReporting();
             else if (viewId === 'ers-reporting-view') renderErsReporting();
             else if (viewId === 'summary-view') {
@@ -9977,6 +9912,297 @@
     };
 
 
+})();
+</script>
+
+
+<script>
+/* === Customer Aid + Strict ERS + OSC+ UI cleanup ===
+   Customer Aid tab drives the info icon and customer-service suppression rules.
+   Weekly Spend Matrix and Pre-Billing UI are removed from this OSC+ build; Firebase governor lock listeners remain active. */
+(function(){
+    window.globalCustomerAidMap = window.globalCustomerAidMap || {};
+    window.globalCustomerAidStrictErsCustomers = window.globalCustomerAidStrictErsCustomers || new Set();
+
+    function aidClean(value) {
+        return String(value === undefined || value === null ? '' : value).trim();
+    }
+
+    function aidCompareKey(value) {
+        const raw = aidClean(value).toUpperCase();
+        if (!raw) return '';
+        if (raw.includes('US FOODS') || raw.includes('US FOOD')) return 'USFOODS';
+        if (raw.includes('C&L') || raw.includes('C & L') || raw.includes('CL TRANSPORT') || raw.includes('C L TRANSPORT')) return 'CLTRANSPORT';
+        if (raw.includes('PREMIER TRUCK RENTAL') || raw.includes('PREMIER') || raw.includes('PTR')) return 'PREMIERTRUCKRENTAL';
+        return raw.replace(/[^A-Z0-9]/g, '');
+    }
+
+    function aidDisplayCustomer(value) {
+        const raw = aidClean(value);
+        const upper = raw.toUpperCase();
+        if (upper.includes('US FOODS') || upper.includes('US FOOD')) return 'US FOODS';
+        if (upper.includes('C&L') || upper.includes('C & L') || upper.includes('CL TRANSPORT') || upper.includes('C L TRANSPORT')) return 'C&L TRANSPORT';
+        if (upper.includes('PREMIER TRUCK RENTAL') || upper.includes('PREMIER') || upper.includes('PTR')) return 'PREMIER TRUCK RENTAL';
+        if (upper.includes('GARDA')) return 'GARDA';
+        if (upper.includes('BRINKS') || upper.includes('BRINK')) return 'BRINKS';
+        if (upper.includes('FERGUSON')) return 'FERGUSON';
+        if (upper.includes('FRONTIER')) return 'FRONTIER';
+        if (upper.includes('PURPLE WAVE')) return 'PURPLE WAVE';
+        if (upper.includes('QUANTIX')) return 'QUANTIX';
+        return raw || 'UNKNOWN CUSTOMER';
+    }
+
+    function aidFindHeaderIndex(headers, candidates, fallback) {
+        const norm = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const keys = (candidates || []).map(norm);
+        for (let i = 0; i < (headers || []).length; i++) {
+            const h = norm(headers[i]);
+            if (!h) continue;
+            if (keys.includes(h) || keys.some(k => h.includes(k) || k.includes(h))) return i;
+        }
+        return fallback;
+    }
+
+    function aidBuildCustomerAidMap(customerAidRawAOA) {
+        const map = {};
+        const strict = new Set();
+        const rows = Array.isArray(customerAidRawAOA) ? customerAidRawAOA : [];
+        if (!rows.length) {
+            window.globalCustomerAidMap = map;
+            window.globalCustomerAidStrictErsCustomers = strict;
+            return map;
+        }
+
+        let headerIdx = -1;
+        for (let i = 0; i < Math.min(20, rows.length); i++) {
+            const rowText = (rows[i] || []).join('|').toUpperCase();
+            if (rowText.includes('CUSTOMER') && rowText.includes('SERVICE')) { headerIdx = i; break; }
+        }
+        if (headerIdx < 0) headerIdx = 0;
+        const headers = rows[headerIdx] || [];
+        const idx = {
+            customer: aidFindHeaderIndex(headers, ['Customer'], 0),
+            shopId: aidFindHeaderIndex(headers, ['ShopID', 'Shop ID'], 1),
+            daLimit: aidFindHeaderIndex(headers, ['DA Limit'], 2),
+            daApprovalMethod: aidFindHeaderIndex(headers, ['DA Approval Method', 'Approval Method'], 3),
+            serviceType: aidFindHeaderIndex(headers, ['Service', 'Service Type'], 4),
+            notes: aidFindHeaderIndex(headers, ['Notes'], 5),
+            poc: aidFindHeaderIndex(headers, ['POC', 'Point of Contact'], 6),
+            pocNumber: aidFindHeaderIndex(headers, ['POC Number', 'POC Phone', 'Phone'], 7)
+        };
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const row = rows[i] || [];
+            const customer = aidClean(row[idx.customer]);
+            const key = aidCompareKey(customer);
+            if (!key) continue;
+            const record = {
+                customer: aidDisplayCustomer(customer),
+                shopId: aidClean(row[idx.shopId]),
+                daLimit: aidClean(row[idx.daLimit]),
+                daApprovalMethod: aidClean(row[idx.daApprovalMethod]),
+                serviceType: aidClean(row[idx.serviceType]),
+                notes: aidClean(row[idx.notes]),
+                poc: aidClean(row[idx.poc]),
+                pocNumber: aidClean(row[idx.pocNumber])
+            };
+            map[key] = record;
+
+            const services = record.serviceType
+                .split(',')
+                .map(v => v.trim().toUpperCase().replace(/[^A-Z]/g, ''))
+                .filter(Boolean);
+            const uniqueServices = Array.from(new Set(services));
+            if (uniqueServices.length === 1 && (uniqueServices[0] === 'ERS' || uniqueServices[0] === 'ERSA')) {
+                strict.add(key);
+            }
+        }
+
+        window.globalCustomerAidMap = map;
+        window.globalCustomerAidStrictErsCustomers = strict;
+        return map;
+    }
+
+    function aidCandidateTextsForRo(ro) {
+        const vals = [];
+        if (!ro) return vals;
+        try { vals.push(workflowCoordinatorDrilldownCustomer(ro)); } catch(e) {}
+        try { vals.push(getCustKey(ro.customer)); } catch(e) {}
+        vals.push(
+            ro.drillCustomerLevel,
+            ro.preBillingCustomer,
+            ro.custKey,
+            ro.rawCustomerLocation,
+            ro.customer,
+            ro.branch,
+            ro.subregion,
+            ro.drillTopLevel
+        );
+        return vals.filter(v => aidClean(v));
+    }
+
+    function aidRecordForRo(ro) {
+        const map = window.globalCustomerAidMap || {};
+        const candidates = aidCandidateTextsForRo(ro);
+        for (const value of candidates) {
+            const key = aidCompareKey(value);
+            if (key && map[key]) return map[key];
+        }
+        // Fall back to substring matching for location strings that include the customer name.
+        const haystack = candidates.join(' | ').toUpperCase();
+        for (const key of Object.keys(map)) {
+            const cust = aidCompareKey(map[key] && map[key].customer);
+            if (cust && haystack.replace(/[^A-Z0-9]/g, '').includes(cust)) return map[key];
+        }
+        return null;
+    }
+
+    function aidIsStrictErsRo(ro) {
+        const strict = window.globalCustomerAidStrictErsCustomers || new Set();
+        const candidates = aidCandidateTextsForRo(ro);
+        for (const value of candidates) {
+            const key = aidCompareKey(value);
+            if (key && strict.has(key)) return true;
+        }
+        return false;
+    }
+
+    function aidClearPmVendedOwnershipForStrictErs(ro) {
+        if (!ro || !aidIsStrictErsRo(ro)) return false;
+        ro.strictErsCustomer = true;
+        ro.isStrictErsCustomerWork = true;
+        ro.sourceQueue = 'ERS';
+        ro.repClassQueueAssignment = 'ERS';
+        ro.createdByTeam = 'STRICT ERS CUSTOMER';
+        ro.kpiOwners = [];
+        ro.drilldownOwners = [];
+        ro.tileOwners = [];
+        ro.dedicatedShopOwners = [];
+        ro.owner = '';
+        ro.createdByName = '';
+        ro.columnNOwner = '';
+        ro.repClassStateOwner = '';
+        return true;
+    }
+
+    function aidRebuildPmVendedOwnersAfterStrictErs() {
+        const pm = new Set();
+        const vended = new Set();
+        (processedData || []).forEach(ro => {
+            if (!ro || ro.strictErsCustomer || ro.isStrictErsCustomerWork || ro.ersReportingOnly) return;
+            const queue = String(ro.repClassQueueAssignment || ro.createdByTeam || ro.sourceQueue || '').toUpperCase();
+            const owners = [];
+            if (Array.isArray(ro.kpiOwners)) owners.push(...ro.kpiOwners);
+            if (Array.isArray(ro.drilldownOwners)) owners.push(...ro.drilldownOwners);
+            if (Array.isArray(ro.tileOwners)) owners.push(...ro.tileOwners);
+            owners.forEach(owner => {
+                const clean = String(owner || '').trim();
+                const up = clean.toUpperCase();
+                if (!clean || up === 'UNASSIGNED' || up === 'NOT FOUND' || up === 'UNKNOWN' || up === 'N/A' || up === 'NA') return;
+                if (queue === 'PM') pm.add(clean);
+                if (queue === 'VENDED REPAIR') vended.add(clean);
+            });
+        });
+        pmOwners = Array.from(pm).sort((a,b) => a.localeCompare(b));
+        vendedOwners = Array.from(vended).sort((a,b) => a.localeCompare(b));
+        ersOwners = [];
+    }
+
+    function aidApplyStrictErsSuppression() {
+        (processedData || []).forEach(aidClearPmVendedOwnershipForStrictErs);
+        aidRebuildPmVendedOwnersAfterStrictErs();
+    }
+
+    window.openCustomerAidModal = function(safeRo) {
+        const ro = typeof getRoContextBySafeRo === 'function' ? getRoContextBySafeRo(safeRo) : null;
+        const rec = aidRecordForRo(ro);
+        const modal = document.getElementById('customer-aid-modal');
+        const title = document.getElementById('customer-aid-modal-title');
+        const subtitle = document.getElementById('customer-aid-modal-subtitle');
+        const body = document.getElementById('customer-aid-modal-body');
+        if (!modal || !body) return;
+        if (!rec) {
+            if (title) title.textContent = 'Customer Aid';
+            if (subtitle) subtitle.textContent = ro && ro.roNum ? `VRO ${ro.roNum}` : '';
+            body.innerHTML = '<div class="customer-aid-empty">No Customer Aid record found for this customer.</div>';
+            modal.style.display = 'flex';
+            return;
+        }
+        if (title) title.textContent = `${rec.customer} Customer Aid`;
+        if (subtitle) subtitle.textContent = ro && ro.roNum ? `VRO ${ro.roNum}` : '';
+        const fields = [
+            ['Shop ID', rec.shopId],
+            ['DA Limit', rec.daLimit],
+            ['DA Approval Method', rec.daApprovalMethod],
+            ['Service Type', rec.serviceType],
+            ['Notes', rec.notes],
+            ['POC', rec.poc],
+            ['POC Number', rec.pocNumber]
+        ].filter(pair => aidClean(pair[1]));
+        body.innerHTML = fields.length
+            ? fields.map(pair => `<div class="customer-aid-field"><div class="customer-aid-label">${escapeHtml(pair[0])}</div><div class="customer-aid-value">${escapeHtml(pair[1])}</div></div>`).join('')
+            : '<div class="customer-aid-empty">Customer Aid record exists, but no details are populated.</div>';
+        modal.style.display = 'flex';
+    };
+
+    window.closeCustomerAidModal = function() {
+        const modal = document.getElementById('customer-aid-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.getCustomerAidInfoButtonHtml = function(ro) {
+        if (!ro || !aidRecordForRo(ro)) return '';
+        const safeRo = safeFirebaseKey(ro.roNum || '');
+        if (!safeRo) return '';
+        return `<button type="button" class="customer-aid-btn" title="Customer Aid" onclick="event.preventDefault(); event.stopPropagation(); openCustomerAidModal('${safeRo}')">i</button>`;
+    };
+
+    // Close Customer Aid modal by clicking the backdrop.
+    document.addEventListener('click', function(evt){
+        const modal = document.getElementById('customer-aid-modal');
+        if (modal && evt.target === modal) closeCustomerAidModal();
+    });
+
+    // Remove retired UI if an older cached build leaves it in place.
+    function aidRemoveRetiredUi() {
+        const pre = document.getElementById('prebilling-view');
+        if (pre) pre.remove();
+        const spend = document.getElementById('spend-view');
+        if (spend) spend.remove();
+        const preMenu = document.getElementById('menu-prebilling');
+        if (preMenu) preMenu.remove();
+        const spendMenu = document.getElementById('menu-spend');
+        if (spendMenu) spendMenu.remove();
+    }
+
+    const priorRoMatchesOwnerForDrilldown = roMatchesOwnerForDrilldown;
+    roMatchesOwnerForDrilldown = function(ro, owner) {
+        if (ro && (ro.strictErsCustomer || ro.isStrictErsCustomerWork)) return false;
+        return priorRoMatchesOwnerForDrilldown(ro, owner);
+    };
+
+    const priorIsPreBillingReviewRo = isPreBillingReviewRo;
+    isPreBillingReviewRo = function() { return false; };
+    window.renderPreBillingTiles = function() {};
+    window.loadPreBillingCustomerDrilldown = function() {};
+    window.generatePreBillingDrilldownHtml = function() { return ''; };
+
+    const previousProcessExcelData = processExcelData;
+    processExcelData = function(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA) {
+        const result = previousProcessExcelData.apply(this, arguments);
+        try {
+            aidBuildCustomerAidMap(customerAidRawAOA || []);
+            aidApplyStrictErsSuppression();
+            aidRemoveRetiredUi();
+            if (typeof triggerViewUpdate === 'function') triggerViewUpdate();
+        } catch (err) {
+            console.warn('Customer Aid / strict ERS suppression failed:', err);
+        }
+        return result;
+    };
+
+    document.addEventListener('DOMContentLoaded', aidRemoveRetiredUi);
+    try { aidRemoveRetiredUi(); } catch(e) {}
 })();
 </script>
 
