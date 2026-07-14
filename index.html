@@ -9996,31 +9996,6 @@
         return clean;
     }
 
-    function aidShouldOpenInPortal(url) {
-        return /^https?:\/\//i.test(aidNormalizeUrl(url));
-    }
-
-    function aidPortalLinkHtml(href, text) {
-        const normalizedHref = aidNormalizeUrl(href);
-        const label = aidClean(text) || normalizedHref;
-        if (!normalizedHref) return escapeHtml(label);
-        if (aidShouldOpenInPortal(normalizedHref)) {
-            return `<a href="${escapeHtml(normalizedHref)}" onclick="event.preventDefault(); event.stopPropagation(); return openCustomerAidPortalFromLink(this);">${escapeHtml(label)}</a>`;
-        }
-        return `<a href="${escapeHtml(normalizedHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
-    }
-
-    window.openCustomerAidPortalFromLink = function(anchor) {
-        const href = anchor && anchor.href ? anchor.href : '';
-        const label = anchor && anchor.textContent ? anchor.textContent.trim() : 'Customer Aid Link';
-        if (!href) return false;
-        if (typeof openVendorMapPortal === 'function') {
-            return openVendorMapPortal(href, label || 'Customer Aid Link');
-        }
-        window.open(href, '_blank');
-        return false;
-    };
-
     function aidLinkifyEscapedText(text) {
         const raw = aidClean(text);
         if (!raw) return '';
@@ -10030,7 +10005,7 @@
         raw.replace(urlRegex, function(match, _m, offset) {
             out += escapeHtml(raw.slice(lastIndex, offset));
             const href = aidNormalizeUrl(match);
-            out += aidPortalLinkHtml(href, match);
+            out += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(match)}</a>`;
             lastIndex = offset + match.length;
             return match;
         });
@@ -10059,7 +10034,7 @@
         if (!text) return '';
         if (url) {
             const href = aidNormalizeUrl(url);
-            return aidPortalLinkHtml(href, text);
+            return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
         }
         return aidLinkifyEscapedText(text);
     }
