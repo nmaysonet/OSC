@@ -182,6 +182,22 @@
         .home-master-tile:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.12); border-top-color: #000000 !important; }
         .home-master-tile .kpi-name { font-size: 18px; margin-bottom: 15px; }
 
+        .home-portal-grid { display:grid; grid-template-columns: repeat(2, minmax(320px, 1fr)); gap:22px; margin-top:24px; max-width:980px; }
+        .home-portal-tile { background:#fff; border:1px solid var(--border); border-top:6px solid var(--gold); border-radius:12px; padding:34px 28px; min-height:180px; box-shadow:0 4px 14px rgba(15,23,42,0.08); cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; transition:transform .18s ease, box-shadow .18s ease, border-top-color .18s ease; }
+        .home-portal-tile:hover { transform:translateY(-4px); box-shadow:0 14px 26px rgba(15,23,42,0.14); border-top-color:#111827; }
+        .home-portal-title { font-size:24px; font-weight:900; color:#334155; line-height:1.18; margin-bottom:12px; }
+        .home-portal-subtitle { font-size:13px; font-weight:800; color:#64748b; line-height:1.35; }
+        .home-portal-enter { margin-top:20px; display:inline-flex; align-items:center; justify-content:center; align-self:flex-start; background:var(--gold); color:#222; border-radius:999px; padding:9px 16px; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.35px; }
+        .home-portal-note { margin-top:12px; color:#64748b; font-size:12px; font-weight:750; line-height:1.4; max-width:980px; }
+        @media (max-width: 900px) { .home-portal-grid { grid-template-columns:1fr; } }
+
+        .ro-action-line { display:grid; grid-template-columns:92px minmax(118px, 1fr) auto; align-items:center; column-gap:10px; width:100%; min-width:0; }
+        .ro-action-link { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .ro-action-icons { display:inline-flex; align-items:center; justify-content:flex-end; gap:8px; white-space:nowrap; min-width:72px; }
+        .ro-action-icons .customer-aid-btn, .ro-action-icons .note-btn { margin-left:0; flex:0 0 auto; }
+        .ro-action-icons .queue-source-pill, .ro-action-icons .lock-warning-tooltip { flex:0 0 auto; }
+
+
         .kpi-top-metrics { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
         .highlight-box { flex: 1; background: #fffaf0; border: 1px solid var(--gold); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; justify-content: center;}
         .highlight-box.urgent-box { background: #fff0f0; border-color: var(--urgent-red); }
@@ -573,9 +589,10 @@
             </div>
             <div id="home-dashboard" style="display:none;">
                 <div class="home-dashboard-header">
-                    <h2 style="margin:0;">Aggregate Performance Overview</h2>
+                    <h2 style="margin:0;">OSC+ Queue Portals</h2>
                 </div>
-                <div class="home-kpi-container" id="home-kpi-container"></div>
+                <div class="home-portal-grid" id="home-kpi-container"></div>
+                <div class="home-portal-note">Select a queue to load the live owner tiles. This home page is intentionally lightweight so OSC+ does not build aggregate queue metrics before coordinators enter their work view.</div>
             </div>
         </div>
 
@@ -7146,25 +7163,22 @@
         function renderHomeDashboard() {
             const container = document.getElementById('home-kpi-container');
             if (!container) return;
-            container.innerHTML = '';
-            let aggData = processedData;
-
-            if (currentCustomerFilter !== 'ALL') {
-                aggData = aggData.filter(ro => ro.custKey === currentCustomerFilter);
-            }
-
-            let pmData = aggData.filter(ro => ro.kpiOwners && ro.kpiOwners.some(o => pmOwners.includes(o)));
-            let vendedData = aggData.filter(ro => ro.kpiOwners && ro.kpiOwners.some(o => vendedOwners.includes(o)));
-
-            const pmTile = document.createElement('div');
-            pmTile.className = 'kpi-tile home-master-tile';
-            pmTile.innerHTML = generateTileHTML('PM Dashboard', pmData, 'chart-pm', true, 'ALL_PM', 'home-view');
-            container.appendChild(pmTile);
-            
-            const vendedTile = document.createElement('div');
-            vendedTile.className = 'kpi-tile home-master-tile';
-            vendedTile.innerHTML = generateTileHTML('Vended Repair Dashboard', vendedData, 'chart-vended', false, 'ALL_VENDED', 'home-view');
-            container.appendChild(vendedTile);
+            container.innerHTML = `
+                <div class="home-portal-tile" role="button" tabindex="0" onclick="navigate('vended-view', document.getElementById('menu-vended'))" onkeypress="if(event.key==='Enter'){navigate('vended-view', document.getElementById('menu-vended'))}">
+                    <div>
+                        <div class="home-portal-title">Enter Vended Repair Queue</div>
+                        <div class="home-portal-subtitle">Open the live Vended Repair owner tiles and drilldowns.</div>
+                    </div>
+                    <div class="home-portal-enter">Enter Queue →</div>
+                </div>
+                <div class="home-portal-tile" role="button" tabindex="0" onclick="navigate('pm-view', document.getElementById('menu-pm'))" onkeypress="if(event.key==='Enter'){navigate('pm-view', document.getElementById('menu-pm'))}">
+                    <div>
+                        <div class="home-portal-title">Enter Vended Maintenance Queue</div>
+                        <div class="home-portal-subtitle">Open the live Vended Maintenance / PM owner tiles and drilldowns.</div>
+                    </div>
+                    <div class="home-portal-enter">Enter Queue →</div>
+                </div>
+            `;
         }
 
         function renderKPITiles(ownersList, containerId, parentViewId) {
@@ -7737,7 +7751,7 @@
                                 let roLinkDisplayHtml = isRepclassOnlyRow ? `<span class="ro-link ro-link-locked" title="Completed work: repclass review only">${escapeHtml(roNum)}</span>` : (isPreWipLocked ? getLockedRoDisplayFromHtml(u.roLinks[idx], roNum) : u.roLinks[idx]);
                                 let lockTooltipHtml = isPreWipLocked && !isRepclassOnlyRow ? getLockTooltipHtml() : '';
                                 let aidBtnHtml = (typeof getCustomerAidInfoButtonHtml === 'function') ? getCustomerAidInfoButtonHtml(rowRo) : '';
-                                let roHtml = `<div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">${statusToggleHtml} ${roLinkDisplayHtml} ${aidBtnHtml} ${noteBtnHtml} ${sourcePillHtml} ${lockTooltipHtml}</div>`;
+                                let roHtml = `<div class="ro-action-line"><div>${statusToggleHtml}</div><div class="ro-action-link">${roLinkDisplayHtml}</div><div class="ro-action-icons">${aidBtnHtml}${noteBtnHtml}${sourcePillHtml}${lockTooltipHtml}</div></div>`;
 
                                 const rowIsOpen = !!(rowRo && rowRo.isOpen);
                                 const rowComplianceEligible = rowIsOpen && isComplianceEligibleRo(rowRo);
@@ -8072,7 +8086,9 @@
 
                             let roLinkDisplayHtml = isPreWipLocked ? getLockedRoDisplayFromHtml(u.roLinks[idx], roNum) : u.roLinks[idx];
                             let lockTooltipHtml = isPreWipLocked ? getLockTooltipHtml() : '';
-                            let roHtml = `<div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">${statusToggleHtml} ${roLinkDisplayHtml} ${noteBtnHtml} ${lockTooltipHtml}</div>`;
+                            let rowRo = getRoContextBySafeRo(safeRo) || {};
+                            let aidBtnHtml = (typeof getCustomerAidInfoButtonHtml === 'function') ? getCustomerAidInfoButtonHtml(rowRo) : '';
+                            let roHtml = `<div class="ro-action-line"><div>${statusToggleHtml}</div><div class="ro-action-link">${roLinkDisplayHtml}</div><div class="ro-action-icons">${aidBtnHtml}${noteBtnHtml}${lockTooltipHtml}</div></div>`;
 
                             searchHtml += `<tr class="${isPreWipLocked ? 'locked-prewip-row' : ''}" title="${isPreWipLocked ? PRE_WIP_LOCK_MESSAGE : ''}">`;
                             searchHtml += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${idx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'};">${roHtml}</td>`;
