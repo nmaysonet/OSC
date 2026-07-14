@@ -439,8 +439,13 @@
         .grouped-ro-item:last-child { margin-bottom: 0; }
 
 
-        .customer-aid-btn { width:20px; height:20px; border-radius:50%; border:1px solid #2563eb; background:#eff6ff; color:#2563eb; font-size:12px; font-weight:900; line-height:18px; text-align:center; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; box-shadow:0 1px 2px rgba(37,99,235,0.18); font-family: Georgia, serif; font-style:italic; }
-        .customer-aid-btn:hover { background:#2563eb; color:#fff; transform:translateY(-1px); }
+        .customer-aid-btn { width:20px; height:20px; border-radius:50%; border:1px solid #facc15; background:#fffbea; color:#1d4ed8; font-size:12px; font-weight:900; line-height:18px; text-align:center; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; box-shadow:0 0 0 0 rgba(255,198,0,0.35), 0 1px 2px rgba(37,99,235,0.18); font-family: Georgia, serif; font-style:italic; animation: customerAidGlow 1.65s ease-in-out infinite; }
+        @keyframes customerAidGlow {
+            0%, 100% { box-shadow:0 0 0 0 rgba(255,198,0,0.18), 0 1px 2px rgba(37,99,235,0.18); border-color:#2563eb; background:#eff6ff; transform:scale(1); }
+            50% { box-shadow:0 0 0 5px rgba(255,198,0,0.30), 0 0 13px rgba(255,198,0,0.85); border-color:#FFC600; background:#fff8db; transform:scale(1.07); }
+        }
+
+        .customer-aid-btn:hover { background:#2563eb; color:#fff; transform:translateY(-1px) scale(1.08); animation-play-state:paused; box-shadow:0 0 0 5px rgba(255,198,0,0.32), 0 0 14px rgba(255,198,0,0.9); }
         .customer-aid-modal-box { width:420px; max-width:92vw; border-top:5px solid #2563eb; }
         .customer-aid-subtitle { font-size:11px; font-weight:800; color:#64748b; margin-top:-8px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.35px; }
         .customer-aid-fields { display:flex; flex-direction:column; gap:7px; }
@@ -9988,7 +9993,9 @@
             serviceType: aidFindHeaderIndex(headers, ['Service', 'Service Type'], 4),
             notes: aidFindHeaderIndex(headers, ['Notes'], 5),
             poc: aidFindHeaderIndex(headers, ['POC', 'Point of Contact'], 6),
-            pocNumber: aidFindHeaderIndex(headers, ['POC Number', 'POC Phone', 'Phone'], 7)
+            pocNumber: aidFindHeaderIndex(headers, ['POC Number', 'POC Phone', 'Phone'], 7),
+            pmRepairClasses: aidFindHeaderIndex(headers, ['PM Repair Classes', 'PM Repair Class', 'PM Classes'], 8),
+            vrRepairClasses: aidFindHeaderIndex(headers, ['VR Repair Classes', 'VR Repair Class', 'Vended Repair Classes', 'Vended Repair Class', 'VR Classes'], 9)
         };
 
         for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -10004,7 +10011,9 @@
                 serviceType: aidClean(row[idx.serviceType]),
                 notes: aidClean(row[idx.notes]),
                 poc: aidClean(row[idx.poc]),
-                pocNumber: aidClean(row[idx.pocNumber])
+                pocNumber: aidClean(row[idx.pocNumber]),
+                pmRepairClasses: aidClean(row[idx.pmRepairClasses]),
+                vrRepairClasses: aidClean(row[idx.vrRepairClasses])
             };
             map[key] = record;
 
@@ -10135,6 +10144,8 @@
             ['DA Limit', rec.daLimit],
             ['DA Approval Method', rec.daApprovalMethod],
             ['Service Type', rec.serviceType],
+            ['PM Repair Classes', rec.pmRepairClasses],
+            ['VR Repair Classes', rec.vrRepairClasses],
             ['Notes', rec.notes],
             ['POC', rec.poc],
             ['POC Number', rec.pocNumber]
