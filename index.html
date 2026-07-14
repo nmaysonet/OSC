@@ -468,6 +468,8 @@
         .customer-aid-field { display:flex; gap:8px; align-items:flex-start; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; padding:8px 9px; }
         .customer-aid-label { min-width:130px; font-size:10px; font-weight:900; color:#475569; text-transform:uppercase; letter-spacing:.35px; }
         .customer-aid-value { flex:1; font-size:12px; font-weight:800; color:#1f2937; line-height:1.25; white-space:pre-wrap; word-break:break-word; }
+        .customer-aid-value a { color:#0066cc; font-weight:900; text-decoration:underline; }
+        .customer-aid-value a:hover { color:#004a99; }
         .customer-aid-empty { color:#64748b; font-size:12px; font-weight:800; text-align:center; padding:10px; }
 
 
@@ -1201,6 +1203,29 @@
             return XLSX.utils.sheet_to_json(workbook.Sheets[targetSheet], { header: 1, defval: '' }) || [];
         }
 
+        function sheetToAoaWithHyperlinks(sheet, baseAoa) {
+            const aoa = Array.isArray(baseAoa) ? baseAoa.map(row => Array.isArray(row) ? row.slice() : row) : (XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) || []);
+            try {
+                if (!sheet || !sheet['!ref']) return aoa;
+                const range = XLSX.utils.decode_range(sheet['!ref']);
+                for (let r = range.s.r; r <= range.e.r; r++) {
+                    if (!aoa[r]) aoa[r] = [];
+                    for (let c = range.s.c; c <= range.e.c; c++) {
+                        const addr = XLSX.utils.encode_cell({ r, c });
+                        const cell = sheet[addr];
+                        const target = cell && cell.l && cell.l.Target ? String(cell.l.Target || '').trim() : '';
+                        if (!target) continue;
+                        const existing = aoa[r] && aoa[r][c] !== undefined && aoa[r][c] !== null ? aoa[r][c] : '';
+                        const display = String(existing || cell.w || cell.v || target).trim();
+                        aoa[r][c] = { text: display || target, url: target };
+                    }
+                }
+            } catch (err) {
+                console.warn('Customer Aid hyperlink preservation failed:', err);
+            }
+            return aoa;
+        }
+
 
         function getWorkbookFingerprintFromBuffer(buffer) {
             try {
@@ -1271,7 +1296,7 @@
                         } else if (sheetNameLower.includes('repclass') || sheetNameLower.includes('rep class')) {
                             repClassRawAOA = aoa;
                         } else if (sheetNameLower.includes('customer aid') || sheetNameLower.includes('customeraid')) {
-                            customerAidRawAOA = aoa;
+                            customerAidRawAOA = sheetToAoaWithHyperlinks(workbook.Sheets[sheetName], aoa);
                         } else if (sheetNameLower.includes('vro export')) {
                             let headerIdx = -1;
                             for (let i = 0; i < Math.min(20, aoa.length); i++) {
@@ -1388,7 +1413,7 @@
                         } else if (sheetNameLower.includes('repclass') || sheetNameLower.includes('rep class')) {
                             repClassRawAOA = aoa;
                         } else if (sheetNameLower.includes('customer aid') || sheetNameLower.includes('customeraid')) {
-                            customerAidRawAOA = aoa;
+                            customerAidRawAOA = sheetToAoaWithHyperlinks(workbook.Sheets[sheetName], aoa);
                         } else if (sheetNameLower.includes('vro export')) {
                             let headerIdx = -1;
                             for (let i = 0; i < Math.min(20, aoa.length); i++) {
@@ -9346,7 +9371,7 @@
     window.globalErsReportingRows = [];
 
     function oscHeaderIndexFromRows(rows, candidates, fallback) {
-        const norm = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const norm = v => aidClean(v).toUpperCase().replace(/[^A-Z0-9]/g, '');
         const candidateKeys = (candidates || []).map(norm);
         const header = (rows && rows[0]) ? rows[0] : [];
         for (let i = 0; i < header.length; i++) {
@@ -9946,7 +9971,72 @@
     window.globalCustomerAidStrictErsCustomers = window.globalCustomerAidStrictErsCustomers || new Set();
 
     function aidClean(value) {
+        if (value && typeof value === 'object') {
+            if (value.text !== undefined && value.text !== null) return String(value.text).trim();
+            if (value.value !== undefined && value.value !== null) return String(value.value).trim();
+            if (value.raw !== undefined && value.raw !== null) return String(value.raw).trim();
+        }
         return String(value === undefined || value === null ? '' : value).trim();
+    }
+
+    function aidUrl(value) {
+        if (value && typeof value === 'object' && value.url) return String(value.url || '').trim();
+        return '';
+    }
+
+    function aidField(value) {
+        return { text: aidClean(value), url: aidUrl(value) };
+    }
+
+    function aidNormalizeUrl(url) {
+        const clean = aidClean(url);
+        if (!clean) return '';
+        if (/^(https?:|mailto:|tel:)/i.test(clean)) return clean;
+        if (/^www\./i.test(clean)) return 'https://' + clean;
+        return clean;
+    }
+
+    function aidLinkifyEscapedText(text) {
+        const raw = aidClean(text);
+        if (!raw) return '';
+        const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+        let out = '';
+        let lastIndex = 0;
+        raw.replace(urlRegex, function(match, _m, offset) {
+            out += escapeHtml(raw.slice(lastIndex, offset));
+            const href = aidNormalizeUrl(match);
+            out += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(match)}</a>`;
+            lastIndex = offset + match.length;
+            return match;
+        });
+        out += escapeHtml(raw.slice(lastIndex));
+        return out;
+    }
+
+    function aidFormatDaLimit(value) {
+        const text = aidClean(value);
+        if (!text) return '';
+        if (/^none$/i.test(text)) return text;
+        if (/[$]/.test(text)) return text;
+        if (/^-?\d+(?:\.\d+)?$/.test(text.replace(/,/g, '').trim())) {
+            const amount = Number(text.replace(/,/g, '').trim());
+            if (Number.isFinite(amount)) {
+                return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: amount % 1 ? 2 : 0 });
+            }
+        }
+        return text;
+    }
+
+    function aidRenderFieldValue(label, value) {
+        const isDaLimit = String(label || '').toUpperCase().replace(/[^A-Z]/g, '') === 'DALIMIT';
+        const url = aidUrl(value);
+        const text = isDaLimit ? aidFormatDaLimit(value) : aidClean(value);
+        if (!text) return '';
+        if (url) {
+            const href = aidNormalizeUrl(url);
+            return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+        }
+        return aidLinkifyEscapedText(text);
     }
 
     function aidCompareKey(value) {
@@ -9974,7 +10064,7 @@
     }
 
     function aidFindHeaderIndex(headers, candidates, fallback) {
-        const norm = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const norm = v => aidClean(v).toUpperCase().replace(/[^A-Z0-9]/g, '');
         const keys = (candidates || []).map(norm);
         for (let i = 0; i < (headers || []).length; i++) {
             const h = norm(headers[i]);
@@ -9996,7 +10086,7 @@
 
         let headerIdx = -1;
         for (let i = 0; i < Math.min(20, rows.length); i++) {
-            const rowText = (rows[i] || []).join('|').toUpperCase();
+            const rowText = (rows[i] || []).map(aidClean).join('|').toUpperCase();
             if (rowText.includes('CUSTOMER') && rowText.includes('SERVICE')) { headerIdx = i; break; }
         }
         if (headerIdx < 0) headerIdx = 0;
@@ -10021,19 +10111,19 @@
             if (!key) continue;
             const record = {
                 customer: aidDisplayCustomer(customer),
-                shopId: aidClean(row[idx.shopId]),
-                daLimit: aidClean(row[idx.daLimit]),
-                daApprovalMethod: aidClean(row[idx.daApprovalMethod]),
-                serviceType: aidClean(row[idx.serviceType]),
-                notes: aidClean(row[idx.notes]),
-                poc: aidClean(row[idx.poc]),
-                pocNumber: aidClean(row[idx.pocNumber]),
-                pmRepairClasses: aidClean(row[idx.pmRepairClasses]),
-                vrRepairClasses: aidClean(row[idx.vrRepairClasses])
+                shopId: aidField(row[idx.shopId]),
+                daLimit: aidField(row[idx.daLimit]),
+                daApprovalMethod: aidField(row[idx.daApprovalMethod]),
+                serviceType: aidField(row[idx.serviceType]),
+                notes: aidField(row[idx.notes]),
+                poc: aidField(row[idx.poc]),
+                pocNumber: aidField(row[idx.pocNumber]),
+                pmRepairClasses: aidField(row[idx.pmRepairClasses]),
+                vrRepairClasses: aidField(row[idx.vrRepairClasses])
             };
             map[key] = record;
 
-            const services = record.serviceType
+            const services = aidClean(record.serviceType)
                 .split(',')
                 .map(v => v.trim().toUpperCase().replace(/[^A-Z]/g, ''))
                 .filter(Boolean);
@@ -10167,7 +10257,7 @@
             ['POC Number', rec.pocNumber]
         ].filter(pair => aidClean(pair[1]));
         body.innerHTML = fields.length
-            ? fields.map(pair => `<div class="customer-aid-field"><div class="customer-aid-label">${escapeHtml(pair[0])}</div><div class="customer-aid-value">${escapeHtml(pair[1])}</div></div>`).join('')
+            ? fields.map(pair => `<div class="customer-aid-field"><div class="customer-aid-label">${escapeHtml(pair[0])}</div><div class="customer-aid-value">${aidRenderFieldValue(pair[0], pair[1])}</div></div>`).join('')
             : '<div class="customer-aid-empty">Customer Aid record exists, but no details are populated.</div>';
         modal.style.display = 'flex';
     };
