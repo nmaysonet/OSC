@@ -191,11 +191,14 @@
         .home-portal-note { margin-top:12px; color:#64748b; font-size:12px; font-weight:750; line-height:1.4; max-width:980px; }
         @media (max-width: 900px) { .home-portal-grid { grid-template-columns:1fr; } }
 
-        .ro-action-line { display:grid; grid-template-columns:92px minmax(118px, 1fr) auto; align-items:center; column-gap:10px; width:100%; min-width:0; }
-        .ro-action-link { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .ro-action-icons { display:inline-flex; align-items:center; justify-content:flex-end; gap:8px; white-space:nowrap; min-width:72px; }
+        .queue-drilldown-table { min-width:1320px; table-layout:fixed; }
+        .ro-action-line { display:flex; align-items:center; gap:10px; width:100%; min-width:0; flex-wrap:nowrap; }
+        .ro-action-line > div:first-child { flex:0 0 auto; min-width:max-content; }
+        .ro-action-link { flex:1 1 auto; min-width:82px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .ro-action-icons { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:flex-end; gap:10px; white-space:nowrap; min-width:58px; }
         .ro-action-icons .customer-aid-btn, .ro-action-icons .note-btn { margin-left:0; flex:0 0 auto; }
         .ro-action-icons .queue-source-pill, .ro-action-icons .lock-warning-tooltip { flex:0 0 auto; }
+        .repclass-only-badge { max-width:none; min-width:max-content; }
 
 
         .kpi-top-metrics { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
@@ -471,6 +474,18 @@
         .customer-aid-value a { color:#0066cc; font-weight:900; text-decoration:underline; }
         .customer-aid-value a:hover { color:#004a99; }
         .customer-aid-empty { color:#64748b; font-size:12px; font-weight:800; text-align:center; padding:10px; }
+        .customer-aid-action-link { display:inline-flex; align-items:center; justify-content:center; margin-top:6px; padding:5px 9px; border-radius:999px; background:#eff6ff; color:#1d4ed8 !important; border:1px solid #bfdbfe; font-size:10px; font-weight:900; text-transform:uppercase; text-decoration:none !important; letter-spacing:.3px; }
+        .customer-aid-action-link:hover { background:#dbeafe; color:#1e40af !important; }
+        .frontier-contact-modal { z-index:1100; background:rgba(15,23,42,0.66); }
+        .frontier-contact-modal-box { width:760px; max-width:94vw; border-top:5px solid var(--gold); }
+        .frontier-contact-helper { color:#64748b; font-size:12px; font-weight:800; line-height:1.35; margin-top:-6px; margin-bottom:12px; }
+        .frontier-contact-table-wrap { max-height:62vh; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; }
+        .frontier-contact-table { width:100%; min-width:640px; border-collapse:collapse; table-layout:fixed; font-size:12px; }
+        .frontier-contact-table th { position:sticky; top:0; background:#1f2937; color:#fff; text-align:left; padding:9px 10px; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.35px; z-index:1; }
+        .frontier-contact-table td { padding:9px 10px; border-bottom:1px solid #e5e7eb; vertical-align:middle; font-weight:800; color:#334155; word-break:normal; overflow-wrap:anywhere; }
+        .frontier-contact-table tr:nth-child(even) td { background:#f8fafc; }
+        .frontier-contact-table a { color:#0066cc; font-weight:900; text-decoration:underline; }
+
 
 
     </style>
@@ -825,9 +840,9 @@
             <div class="drilldown-container table-wrapper">
                 <table>
                     <colgroup>
-                        <col style="width: 20%;"> <col style="width: 12%;"> <col style="width: 12%;">
-                        <col style="width: 10%;">  <col style="width: 12%;"> <col style="width: 12%;">
-                        <col style="width: 22%;">
+                        <col style="width: 24%;"> <col style="width: 11%;"> <col style="width: 11%;">
+                        <col style="width: 9%;">  <col style="width: 11%;"> <col style="width: 11%;">
+                        <col style="width: 23%;">
                     </colgroup>
                     <thead>
                         <tr>
@@ -870,6 +885,24 @@
             </div>
             <div id="customer-aid-modal-subtitle" class="customer-aid-subtitle"></div>
             <div id="customer-aid-modal-body" class="customer-aid-fields"></div>
+        </div>
+    </div>
+
+    <div id="frontier-contact-modal" class="modal-overlay frontier-contact-modal">
+        <div class="modal-box frontier-contact-modal-box">
+            <div class="modal-header">
+                <span>Frontier Fleet Manager Contacts</span>
+                <button class="modal-close" onclick="closeFrontierFleetManagerContactModal()">&times;</button>
+            </div>
+            <div class="frontier-contact-helper">Use the unit/state to identify the Fleet Manager for DA review.</div>
+            <div class="frontier-contact-table-wrap">
+                <table class="frontier-contact-table">
+                    <thead>
+                        <tr><th>FM</th><th>State</th><th>E-Mail</th><th>Contact</th></tr>
+                    </thead>
+                    <tbody id="frontier-contact-table-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -7734,7 +7767,7 @@
                             return (b.isOOS === true ? 1 : 0) - (a.isOOS === true ? 1 : 0);
                         });
 
-                        let tableHTML = `<div class="table-wrapper"><table><colgroup><col style="width:21%;"><col style="width:10%;">${isPM ? '' : '<col style="width:10%;">'}<col style="width:8%;"><col style="width:10%;"><col style="width:18%;"><col style="width:15%;"><col style="width:12%;"></colgroup><thead><tr><th>AFS RO # & Dispatch</th><th>Unit No</th>${isPM ? '' : '<th>Priority Status</th>'}<th>OOS Status</th><th>Opened Date</th><th>Status</th><th>Repair Class</th><th>ECD</th></tr></thead><tbody>`;
+                        let tableHTML = `<div class="table-wrapper"><table class="queue-drilldown-table"><colgroup><col style="width:${isPM ? '31%' : '28%'};"><col style="width:${isPM ? '12%' : '11%'};">${isPM ? '' : '<col style="width:9%;">'}<col style="width:8%;"><col style="width:9%;"><col style="width:${isPM ? '17%' : '14%'};"><col style="width:${isPM ? '14%' : '12%'};"><col style="width:${isPM ? '9%' : '9%'};"></colgroup><thead><tr><th>AFS RO # & Dispatch</th><th>Unit No</th>${isPM ? '' : '<th>Priority Status</th>'}<th>OOS Status</th><th>Opened Date</th><th>Status</th><th>Repair Class</th><th>ECD</th></tr></thead><tbody>`;
                         
                         let visibleRowsCount = 0;
                         let lockedCount = 0;
@@ -9996,6 +10029,31 @@
         return clean;
     }
 
+    function aidShouldOpenInPortal(url) {
+        return /^https?:\/\//i.test(aidNormalizeUrl(url));
+    }
+
+    function aidPortalLinkHtml(href, text) {
+        const normalizedHref = aidNormalizeUrl(href);
+        const label = aidClean(text) || normalizedHref;
+        if (!normalizedHref) return escapeHtml(label);
+        if (aidShouldOpenInPortal(normalizedHref)) {
+            return `<a href="${escapeHtml(normalizedHref)}" onclick="event.preventDefault(); event.stopPropagation(); return openCustomerAidPortalFromLink(this);">${escapeHtml(label)}</a>`;
+        }
+        return `<a href="${escapeHtml(normalizedHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+    }
+
+    window.openCustomerAidPortalFromLink = function(anchor) {
+        const href = anchor && anchor.href ? anchor.href : '';
+        const label = anchor && anchor.textContent ? anchor.textContent.trim() : 'Customer Aid Link';
+        if (!href) return false;
+        if (typeof openVendorMapPortal === 'function') {
+            return openVendorMapPortal(href, label || 'Customer Aid Link');
+        }
+        window.open(href, '_blank');
+        return false;
+    };
+
     function aidLinkifyEscapedText(text) {
         const raw = aidClean(text);
         if (!raw) return '';
@@ -10005,7 +10063,7 @@
         raw.replace(urlRegex, function(match, _m, offset) {
             out += escapeHtml(raw.slice(lastIndex, offset));
             const href = aidNormalizeUrl(match);
-            out += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(match)}</a>`;
+            out += aidPortalLinkHtml(href, match);
             lastIndex = offset + match.length;
             return match;
         });
@@ -10027,17 +10085,64 @@
         return text;
     }
 
-    function aidRenderFieldValue(label, value) {
-        const isDaLimit = String(label || '').toUpperCase().replace(/[^A-Z]/g, '') === 'DALIMIT';
+    function aidRenderFieldValue(label, value, record) {
+        const normalizedLabel = String(label || '').toUpperCase().replace(/[^A-Z]/g, '');
+        const isDaLimit = normalizedLabel === 'DALIMIT';
         const url = aidUrl(value);
         const text = isDaLimit ? aidFormatDaLimit(value) : aidClean(value);
         if (!text) return '';
+        let html = '';
         if (url) {
             const href = aidNormalizeUrl(url);
-            return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+            html = aidPortalLinkHtml(href, text);
+        } else {
+            html = aidLinkifyEscapedText(text);
         }
-        return aidLinkifyEscapedText(text);
+        const isFrontierApproval = normalizedLabel === 'DAAPPROVALMETHOD'
+            && aidCompareKey(record && record.customer) === 'FRONTIER'
+            && /E\s*-?\s*MAIL\s+TO\s+FLEET\s+MANAGER/i.test(text);
+        if (isFrontierApproval) {
+            html += `<br><a href="#" class="customer-aid-action-link" onclick="event.preventDefault(); event.stopPropagation(); openFrontierFleetManagerContactModal(); return false;">View Contact</a>`;
+        }
+        return html;
     }
+
+    const FRONTIER_FLEET_MANAGER_CONTACTS = [
+        { fm: 'Kirk Rux', states: ['IA', 'MN', 'NE', 'WI'], email: 'Kirk.rux@FTR.com', contact: '715-722-9732' },
+        { fm: 'Scott Dickson', states: ['MI', 'PA', 'NY'], email: 'scott.dickson@ftr.com', contact: '585-777-2814' },
+        { fm: 'Jason Brown', states: ['SC', 'GA', 'TN', 'MS', 'AL', 'OH', 'NC'], email: 'jason.brown@ftr.com', contact: '910-808-7104' },
+        { fm: 'Denny Kosovic', states: ['WV'], email: 'denny.kosovic@FTR.com', contact: '203-215-9093' },
+        { fm: 'Nate Washington', states: ['NV', 'CA', 'UT'], email: 'Nate.Washington@FTR.com', contact: '805-208-1713' },
+        { fm: 'Duval Cormier', states: ['AZ', 'CA'], email: 'Duval.p.cormier@FTR.com', contact: '909-967-9003' },
+        { fm: 'Bill Blundell', states: ['IN', 'IL'], email: 'William.blundell@FTR.com', contact: '812-240-6442' }
+    ];
+
+    function buildFrontierContactRowsHtml() {
+        const rows = [];
+        FRONTIER_FLEET_MANAGER_CONTACTS.forEach(group => {
+            (group.states || []).forEach(state => {
+                const email = aidClean(group.email);
+                const emailHtml = email ? `<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : '';
+                rows.push(`<tr><td>${escapeHtml(group.fm)}</td><td>${escapeHtml(state)}</td><td>${emailHtml}</td><td>${escapeHtml(group.contact || '')}</td></tr>`);
+            });
+        });
+        return rows.join('');
+    }
+
+    window.openFrontierFleetManagerContactModal = function() {
+        const modal = document.getElementById('frontier-contact-modal');
+        const body = document.getElementById('frontier-contact-table-body');
+        if (body && !body.dataset.loaded) {
+            body.innerHTML = buildFrontierContactRowsHtml();
+            body.dataset.loaded = '1';
+        }
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeFrontierFleetManagerContactModal = function() {
+        const modal = document.getElementById('frontier-contact-modal');
+        if (modal) modal.style.display = 'none';
+    };
 
     function aidCompareKey(value) {
         const raw = aidClean(value).toUpperCase();
@@ -10257,7 +10362,7 @@
             ['POC Number', rec.pocNumber]
         ].filter(pair => aidClean(pair[1]));
         body.innerHTML = fields.length
-            ? fields.map(pair => `<div class="customer-aid-field"><div class="customer-aid-label">${escapeHtml(pair[0])}</div><div class="customer-aid-value">${aidRenderFieldValue(pair[0], pair[1])}</div></div>`).join('')
+            ? fields.map(pair => `<div class="customer-aid-field"><div class="customer-aid-label">${escapeHtml(pair[0])}</div><div class="customer-aid-value">${aidRenderFieldValue(pair[0], pair[1], rec)}</div></div>`).join('')
             : '<div class="customer-aid-empty">Customer Aid record exists, but no details are populated.</div>';
         modal.style.display = 'flex';
     };
@@ -10278,6 +10383,8 @@
     document.addEventListener('click', function(evt){
         const modal = document.getElementById('customer-aid-modal');
         if (modal && evt.target === modal) closeCustomerAidModal();
+        const frontierModal = document.getElementById('frontier-contact-modal');
+        if (frontierModal && evt.target === frontierModal) closeFrontierFleetManagerContactModal();
     });
 
     // Remove retired UI if an older cached build leaves it in place.
