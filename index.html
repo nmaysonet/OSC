@@ -477,14 +477,21 @@
         .customer-aid-action-link { display:inline-flex; align-items:center; justify-content:center; margin-top:6px; padding:5px 9px; border-radius:999px; background:#eff6ff; color:#1d4ed8 !important; border:1px solid #bfdbfe; font-size:10px; font-weight:900; text-transform:uppercase; text-decoration:none !important; letter-spacing:.3px; }
         .customer-aid-action-link:hover { background:#dbeafe; color:#1e40af !important; }
         .frontier-contact-modal { z-index:1100; background:rgba(15,23,42,0.66); }
-        .frontier-contact-modal-box { width:760px; max-width:94vw; border-top:5px solid var(--gold); }
+        .frontier-contact-modal-box { width:820px; max-width:94vw; border-top:5px solid var(--gold); }
         .frontier-contact-helper { color:#64748b; font-size:12px; font-weight:800; line-height:1.35; margin-top:-6px; margin-bottom:12px; }
         .frontier-contact-table-wrap { max-height:62vh; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; }
-        .frontier-contact-table { width:100%; min-width:640px; border-collapse:collapse; table-layout:fixed; font-size:12px; }
+        .frontier-contact-table { width:100%; min-width:720px; border-collapse:collapse; table-layout:fixed; font-size:12px; }
         .frontier-contact-table th { position:sticky; top:0; background:#1f2937; color:#fff; text-align:left; padding:9px 10px; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.35px; z-index:1; }
-        .frontier-contact-table td { padding:9px 10px; border-bottom:1px solid #e5e7eb; vertical-align:middle; font-weight:800; color:#334155; word-break:normal; overflow-wrap:anywhere; }
+        .frontier-contact-table td { padding:9px 10px; border-bottom:1px solid #e5e7eb; vertical-align:middle; font-weight:800; color:#334155; word-break:normal; overflow-wrap:normal; }
         .frontier-contact-table tr:nth-child(even) td { background:#f8fafc; }
-        .frontier-contact-table a { color:#0066cc; font-weight:900; text-decoration:underline; }
+        .frontier-contact-table a { color:#0066cc; font-weight:900; text-decoration:underline; white-space:nowrap; }
+        .frontier-contact-table .frontier-fm-col { width:24%; }
+        .frontier-contact-table .frontier-state-col { width:18%; }
+        .frontier-contact-table .frontier-email-col { width:38%; }
+        .frontier-contact-table .frontier-contact-col { width:20%; }
+        .frontier-contact-states { white-space:normal; line-height:1.3; }
+        .frontier-contact-email { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .frontier-contact-phone { white-space:nowrap; }
 
 
 
@@ -898,7 +905,7 @@
             <div class="frontier-contact-table-wrap">
                 <table class="frontier-contact-table">
                     <thead>
-                        <tr><th>FM</th><th>State</th><th>E-Mail</th><th>Contact</th></tr>
+                        <tr><th class="frontier-fm-col">FM</th><th class="frontier-state-col">State</th><th class="frontier-email-col">E-Mail</th><th class="frontier-contact-col">Contact</th></tr>
                     </thead>
                     <tbody id="frontier-contact-table-body"></tbody>
                 </table>
@@ -10118,15 +10125,12 @@
     ];
 
     function buildFrontierContactRowsHtml() {
-        const rows = [];
-        FRONTIER_FLEET_MANAGER_CONTACTS.forEach(group => {
-            (group.states || []).forEach(state => {
-                const email = aidClean(group.email);
-                const emailHtml = email ? `<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : '';
-                rows.push(`<tr><td>${escapeHtml(group.fm)}</td><td>${escapeHtml(state)}</td><td>${emailHtml}</td><td>${escapeHtml(group.contact || '')}</td></tr>`);
-            });
-        });
-        return rows.join('');
+        return FRONTIER_FLEET_MANAGER_CONTACTS.map(group => {
+            const email = aidClean(group.email);
+            const emailHtml = email ? `<a href="mailto:${escapeHtml(email)}" title="${escapeHtml(email)}">${escapeHtml(email)}</a>` : '';
+            const states = (group.states || []).map(state => aidClean(state)).filter(Boolean).join(', ');
+            return `<tr><td>${escapeHtml(group.fm)}</td><td class="frontier-contact-states">${escapeHtml(states)}</td><td class="frontier-contact-email">${emailHtml}</td><td class="frontier-contact-phone">${escapeHtml(group.contact || '')}</td></tr>`;
+        }).join('');
     }
 
     window.openFrontierFleetManagerContactModal = function() {
