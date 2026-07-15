@@ -10044,10 +10044,14 @@
         const normalizedHref = aidNormalizeUrl(href);
         const label = aidClean(text) || normalizedHref;
         if (!normalizedHref) return escapeHtml(label);
-        if (aidShouldOpenInPortal(normalizedHref)) {
-            return `<a href="${escapeHtml(normalizedHref)}" onclick="event.preventDefault(); event.stopPropagation(); return openCustomerAidPortalFromLink(this);">${escapeHtml(label)}</a>`;
+        const safeHref = escapeHtml(normalizedHref);
+        const safeLabel = escapeHtml(label);
+        if (/^(mailto:|tel:)/i.test(normalizedHref)) {
+            return `<a href="${safeHref}">${safeLabel}</a>`;
         }
-        return `<a href="${escapeHtml(normalizedHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+        // Customer Aid / Customer Info links must NOT open inside the OSC+ portal modal.
+        // Vendor Maps and FleetPride still use the portal modal; Customer Aid links open in a normal browser tab.
+        return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`;
     }
 
     window.openCustomerAidPortalFromLink = function(anchor) {
