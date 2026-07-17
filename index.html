@@ -3467,6 +3467,87 @@
 
         let branchUsefulMap = {}; 
         let branchMetricsMap = {}; 
+        const GARDA_VENDED_BRANCH_CODE_WHITELIST = new Set([
+            '26022',
+            '25092',
+            '25095',
+            '14031',
+            '27010',
+            '27032',
+            '25097',
+            '27008',
+            '14089',
+            '14024',
+            '13068',
+            '13063',
+            '27065',
+            '13062',
+            '13066',
+            '13069',
+            '13065',
+            '19067',
+            '19064',
+            '19065',
+            '19051',
+            '19060',
+            '19050',
+            '19066',
+            '19024',
+            '19053',
+            '19045',
+            '19058',
+            '19055',
+            '19056',
+            '19049',
+            '14092',
+            '14082',
+            '14095',
+            '14421',
+            '28055',
+            '14027',
+            '14028',
+            '13075',
+            '13072',
+            '13020',
+            '13076',
+            '26007',
+            '13011',
+            '13074',
+            '13080',
+            '26003',
+            '26023',
+            '26019',
+            '26001',
+            '26031',
+            '26002',
+            '12015',
+            '12038',
+            '12061',
+            '23060',
+            '23039',
+            '23087',
+            '23080',
+            '23059',
+            '23091',
+            '23053',
+            '23051',
+            '23058',
+            '23050',
+            '23052',
+            '23049',
+            '23047',
+            '12025',
+            '12023',
+            '13088',
+            '23095',
+            '23096',
+            '23016',
+            '12027',
+            '23034',
+            '23037',
+            '12082'
+        ]);
+        let gardaVendedBranchCodeSet = new Set(GARDA_VENDED_BRANCH_CODE_WHITELIST);
         let masterUnits = {}; 
         let ownerNameToTeam = {};
         let globalBranchToTeam = {};
@@ -3946,10 +4027,10 @@
             // If a real non-vended team is present, keep it out of the VDR summary.
             if (teamText === 'PM' || teamText === 'PREVENTATIVE MAINTENANCE' || teamText === 'PREVENTIVE MAINTENANCE' || teamText === 'ERS') return false;
 
-            // For Garda, the Useful tab is the vended branch population provided for Consolidation Summary.
-            // This prevents Dedicated/non-vended Garda sites from leaking into the vended consolidation export.
-            if (custKey === 'GARDA' && gardaVendedBranchCodeSet && gardaVendedBranchCodeSet.size) {
-                if (!branchCode || !gardaVendedBranchCodeSet.has(branchCode)) return false;
+            // Garda vended locations are controlled by the approved branch-code whitelist only.
+            // Do not infer vended status from Useful/OOS/Resource rows because those can include non-vended locations.
+            if (custKey === 'GARDA') {
+                if (!branchCode || !GARDA_VENDED_BRANCH_CODE_WHITELIST.has(branchCode)) return false;
             }
 
             // Explicit Vended Repair is valid. Blank / N/A / NOT FOUND is also valid for Garda OOS sites
@@ -5769,6 +5850,8 @@
                 const reg = m.region || 'Unknown Region';
                 const sub = m.subregion || 'Unknown Subregion';
                 const bra = m.branch || 'Unknown Branch';
+                const under100BranchCode = extractGardaCode(bra) || extractGardaCode(m.branch) || normalizeBranchStr(bra);
+                if (!under100BranchCode || !GARDA_VENDED_BRANCH_CODE_WHITELIST.has(under100BranchCode)) return;
                 if (rVal !== 'ALL' && reg !== rVal) return;
                 if (sVal !== 'ALL' && sub !== sVal) return;
                 if (bVal !== 'ALL' && bra !== bVal) return;
@@ -6211,7 +6294,7 @@
             const today = new Date(); today.setHours(0, 0, 0, 0);
             
             branchUsefulMap = {};
-            gardaVendedBranchCodeSet = new Set();
+            gardaVendedBranchCodeSet = new Set(GARDA_VENDED_BRANCH_CODE_WHITELIST);
             branchMetricsMap = {};
 
             // Parse DoD Tab
@@ -6255,7 +6338,7 @@
                     };
                     
                     branchUsefulMap[bCode] = pcts;
-                    if (bCode) gardaVendedBranchCodeSet.add(bCode);
+                    if (bCode && GARDA_VENDED_BRANCH_CODE_WHITELIST.has(bCode)) gardaVendedBranchCodeSet.add(bCode);
                 }
             }
 
@@ -11025,4 +11108,4 @@
 </script>
 
 </body>
-</html
+</html>
