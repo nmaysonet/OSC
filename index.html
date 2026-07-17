@@ -827,7 +827,7 @@
                             </tr>
                         </thead>
                         <tbody id="ers-reporting-body">
-                            <tr><td colspan="6"><div class="ers-reporting-message">ERS Reporting will load after the workbook data is processed.</div></td></tr>
+                            <tr><td colspan="6"><div class="ers-reporting-message">ERS Reporting will load after master_workFLOWtest.xlsx and ERS.xlsx are processed.</div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1243,6 +1243,26 @@
             return XLSX.utils.sheet_to_json(workbook.Sheets[targetSheet], { header: 1, defval: '' }) || [];
         }
 
+        async function loadErsDatasetFromFirebase() {
+            latestErsDatasetAOA = [];
+            const ersBuffer = await fetchWorkbookBufferFromStorage('ERS.xlsx', { optional: true });
+            if (!ersBuffer) {
+                console.warn('ERS.xlsx was not found. ERS Reporting will not show true ERS event matches until the file is uploaded to Firebase Storage.');
+                return [];
+            }
+            try {
+                const ersWorkbook = XLSX.read(ersBuffer, { type: 'array' });
+                const targetSheet = (ersWorkbook.SheetNames || []).find(name => String(name || '').toLowerCase().includes('data') || String(name || '').toLowerCase().includes('ers')) || (ersWorkbook.SheetNames || [])[0];
+                latestErsDatasetAOA = targetSheet ? (XLSX.utils.sheet_to_json(ersWorkbook.Sheets[targetSheet], { header: 1, defval: '' }) || []) : [];
+                console.log('OSC+ ERS.xlsx loaded:', latestErsDatasetAOA.length, 'rows');
+                return latestErsDatasetAOA;
+            } catch (err) {
+                console.warn('ERS.xlsx could not be parsed. ERS Reporting will load without true ERS event matching.', err);
+                latestErsDatasetAOA = [];
+                return [];
+            }
+        }
+
         function sheetToAoaWithHyperlinks(sheet, baseAoa) {
             const aoa = Array.isArray(baseAoa) ? baseAoa.map(row => Array.isArray(row) ? row.slice() : row) : (XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) || []);
             try {
@@ -1392,6 +1412,8 @@
 
                 statusEl.innerText = 'Loading AI Ref.xlsx for Repair Class Compliance...';
                 await loadAiRefFromFirebase();
+                statusEl.innerText = 'Loading ERS.xlsx for true ERS event matching...';
+                await loadErsDatasetFromFirebase();
 
                 processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
@@ -1501,6 +1523,7 @@
                 });
 
                 await loadAiRefFromFirebase();
+                await loadErsDatasetFromFirebase();
                 processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
                 try {
@@ -3466,6 +3489,7 @@
         let globalBranchToTeam = {};
         let repairClassTransferByOrder = {};
         let latestAiRefAOA = [];
+        let latestErsDatasetAOA = [];
         
         let summaryTree = {};
         let summaryUsefulTree = {};
@@ -3531,14 +3555,27 @@
         }
 
         function parseDateSafe(val) {
-            if (!val) return null;
-            if (typeof val === 'number') {
+            if (val === null || val === undefined || val === '') return null;
+            if (typeof val === 'number' && isFinite(val)) {
                 return new Date(Math.round((val - 25569) * 86400 * 1000));
             }
-            let d = new Date(val);
+
+            const raw = String(val || '').trim();
+            if (!raw) return null;
+
+            // XLSX often returns Excel serial dates as strings for manual-entry reports.
+            // Example: 46212.559270833335 should display as a real date/time, not as the serial number.
+            if (/^\d{4,6}(\.\d+)?$/.test(raw)) {
+                const excelSerial = Number(raw);
+                if (isFinite(excelSerial) && excelSerial > 20000 && excelSerial < 80000) {
+                    return new Date(Math.round((excelSerial - 25569) * 86400 * 1000));
+                }
+            }
+
+            let d = new Date(raw);
             if (!isNaN(d.getTime())) return d;
-            
-            let parts = String(val).split(/[- :]/);
+
+            let parts = raw.split(/[- :]/);
             if (parts.length >= 3) {
                  let year = parseInt(parts[0]);
                  let month = parseInt(parts[1]) - 1;
@@ -5657,6 +5694,186 @@
             XLSX.writeFile(workbook, `workflow_search_${searchTerm}.xlsx`);
         }
 
+
+        function getSummaryUsefulPctNumber(displayNode, usefulNode) {
+            const node = usefulNode || displayNode || { totalUnits: 0, oos: 0, maxRoutes: 0 };
+            const maxRoutes = Number(node.maxRoutes || 0);
+            if (!maxRoutes) return 0;
+            const active = Math.max(0, Number(node.totalUnits || 0) - Number(node.oos || 0));
+            return (active / maxRoutes) * 100;
+        }
+
+        function getFirebaseNotesForExport(roNum) {
+            const safeRo = safeFirebaseKey(roNum || '');
+            if (!safeRo) return '';
+
+            const lines = [];
+            const seen = new Set();
+
+            function addLine(label, text) {
+                const clean = String(text || '').trim();
+                if (!clean) return;
+                const dedupeKey = (label + '|' + clean).toLowerCase();
+                if (seen.has(dedupeKey)) return;
+                seen.add(dedupeKey);
+                lines.push(label ? `${label}: ${clean}` : clean);
+            }
+
+            try {
+                const entries = getActivityEntries(safeRo)
+                    .filter(e => e && e.noteText && String(e.noteText || '').trim())
+                    .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+                entries.forEach(e => {
+                    const dateLabel = e.dateKey || getLocalDateKey(e.timestamp ? new Date(e.timestamp) : new Date());
+                    const timeLabel = formatActivityTime(e.timestamp || '');
+                    const actionLabel = e.actionType === 'NOTE_ADDED' ? 'Note' : String(e.actionType || 'Activity').replace(/_/g, ' ');
+                    addLine(`${dateLabel}${timeLabel ? ' ' + timeLabel : ''} ${actionLabel}`, e.noteText);
+                });
+            } catch(e) {}
+
+            const legacyNote = globalRoNotesState && globalRoNotesState[safeRo] ? String(globalRoNotesState[safeRo] || '').trim() : '';
+            if (legacyNote) addLine('Latest Firebase note', legacyNote);
+
+            const fallbackNote = getWorkflowActivityFallbackNote(safeRo);
+            if (fallbackNote) addLine('Latest workflow note', fallbackNote);
+
+            return lines.join('\n');
+        }
+
+        function isRealOpenVroForSummaryExport(ro) {
+            if (!ro || !ro.roNum || !ro.isOpen) return false;
+            const rn = String(ro.roNum || '').trim();
+            if (!rn || rn.startsWith('NO RO') || rn.startsWith('SEE_OTHER:')) return false;
+            const statusText = String(ro.status || '').toUpperCase();
+            if (
+                statusText.includes('FINAL CHARGES') ||
+                statusText.includes('CLOSED') ||
+                statusText.includes('BILLED') ||
+                statusText.includes('INVOICED') ||
+                statusText.includes('CANCELLED') ||
+                statusText.includes('CANCELED') ||
+                statusText.includes('VOID')
+            ) return false;
+            return normalizeSpendStatus(statusText) !== 'CLOSED';
+        }
+
+        function buildUnder100OosExportRows(rVal, sVal, bVal) {
+            const rows = [];
+            const openRosByUnit = new Map();
+
+            (processedData || []).forEach(ro => {
+                if (!isRealOpenVroForSummaryExport(ro)) return;
+                const unitKey = String(ro.unitNo || '').toUpperCase().trim();
+                if (!unitKey) return;
+                if (!openRosByUnit.has(unitKey)) openRosByUnit.set(unitKey, []);
+                openRosByUnit.get(unitKey).push(ro);
+            });
+
+            Object.keys(masterUnits || {}).sort().forEach(unitKey => {
+                const unit = String(unitKey || '').toUpperCase().trim();
+                const m = masterUnits[unitKey] || {};
+                if (!unit || !m.isOOS || !isVendedSummarySite(m)) return;
+
+                const reg = m.region || 'Unknown Region';
+                const sub = m.subregion || 'Unknown Subregion';
+                const bra = m.branch || 'Unknown Branch';
+                if (rVal !== 'ALL' && reg !== rVal) return;
+                if (sVal !== 'ALL' && sub !== sVal) return;
+                if (bVal !== 'ALL' && bra !== bVal) return;
+
+                const displayNode = summaryTree && summaryTree[reg] && summaryTree[reg].subs && summaryTree[reg].subs[sub] && summaryTree[reg].subs[sub].branches
+                    ? summaryTree[reg].subs[sub].branches[bra]
+                    : null;
+                const usefulNode = getSummaryUsefulNode(reg, sub, bra);
+                const usefulPct = getSummaryUsefulPctNumber(displayNode, usefulNode);
+                if (usefulPct >= 100) return;
+
+                const openRos = (openRosByUnit.get(unit) || []).sort((a, b) => {
+                    const aMs = parseDateSafe(a.openedFormatted) ? parseDateSafe(a.openedFormatted).getTime() : 0;
+                    const bMs = parseDateSafe(b.openedFormatted) ? parseDateSafe(b.openedFormatted).getTime() : 0;
+                    if (aMs !== bMs) return aMs - bMs;
+                    return String(a.roNum || '').localeCompare(String(b.roNum || ''));
+                });
+
+                if (!openRos.length) {
+                    rows.push({
+                        "Region": reg,
+                        "Sub Region": sub,
+                        "Vended Location": bra,
+                        "Useful %": usefulPct.toFixed(1) + '%',
+                        "Unit #": unit,
+                        "VRO #": "",
+                        "VRO Created Date": "",
+                        "Status": "No open VRO found",
+                        "ECD": "",
+                        "Firebase Notes": ""
+                    });
+                    return;
+                }
+
+                openRos.forEach(ro => {
+                    rows.push({
+                        "Region": reg,
+                        "Sub Region": sub,
+                        "Vended Location": bra,
+                        "Useful %": usefulPct.toFixed(1) + '%',
+                        "Unit #": unit,
+                        "VRO #": ro.roNum || '',
+                        "VRO Created Date": ro.openedFormatted || '',
+                        "Status": ro.status || '',
+                        "ECD": ro.ecdFormatted || '',
+                        "Firebase Notes": getFirebaseNotesForExport(ro.roNum)
+                    });
+                });
+            });
+
+            if (!rows.length) {
+                rows.push({
+                    "Region": "",
+                    "Sub Region": "",
+                    "Vended Location": "No vended locations under 100% useful with OOS units found for the selected filters.",
+                    "Useful %": "",
+                    "Unit #": "",
+                    "VRO #": "",
+                    "VRO Created Date": "",
+                    "Status": "",
+                    "ECD": "",
+                    "Firebase Notes": ""
+                });
+            }
+
+            rows.sort((a, b) => {
+                return String(a["Region"] || '').localeCompare(String(b["Region"] || '')) ||
+                    String(a["Sub Region"] || '').localeCompare(String(b["Sub Region"] || '')) ||
+                    String(a["Vended Location"] || '').localeCompare(String(b["Vended Location"] || '')) ||
+                    String(a["Unit #"] || '').localeCompare(String(b["Unit #"] || '')) ||
+                    String(a["VRO #"] || '').localeCompare(String(b["VRO #"] || ''));
+            });
+
+            return rows;
+        }
+
+        function styleUnder100OosSheet(ws, rows) {
+            autoFitColumns(ws, rows);
+            styleExcelHeaders(ws);
+            if (!ws['!ref']) return;
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = 1; R <= range.e.r; ++R) {
+                for (let C = 0; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+                    if (!ws[cellRef]) continue;
+                    if (!ws[cellRef].s) ws[cellRef].s = {};
+                    ws[cellRef].s.alignment = { vertical: "top", wrapText: C === 9 };
+                }
+            }
+            ws['!cols'] = [
+                { wch: 16 }, { wch: 20 }, { wch: 34 }, { wch: 10 }, { wch: 16 },
+                { wch: 16 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 70 }
+            ];
+            ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+        }
+
         window.exportSummaryToExcel = function() {
             let rVal = document.getElementById('sum-region').value;
             let sVal = document.getElementById('sum-subregion').value;
@@ -5746,9 +5963,15 @@
                 }
             }
 
+            // Tab 3: Vended locations under 100% useful with OOS unit / open VRO detail
+            const under100OosRows = buildUnder100OosExportRows(rVal, sVal, bVal);
+            const wsUnder100Oos = XLSX.utils.json_to_sheet(under100OosRows);
+            styleUnder100OosSheet(wsUnder100Oos, under100OosRows);
+
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, wsConsolidation, "Consolidation Summary");
             XLSX.utils.book_append_sheet(workbook, wsAmerit, "Amerit OOS Units");
+            XLSX.utils.book_append_sheet(workbook, wsUnder100Oos, "Under 100 Useful OOS");
             XLSX.writeFile(workbook, "VDR_Consolidation_Summary.xlsx");
         }
 
@@ -9437,8 +9660,14 @@
 
     function oscBuildErsCoordinatorMap(resourceRawAOA) {
         const map = {};
+        const byNameKey = {};
+        const list = [];
         const rows = Array.isArray(resourceRawAOA) ? resourceRawAOA : [];
-        if (!rows.length) return map;
+        if (!rows.length) {
+            map.__byNameKey = byNameKey;
+            map.__list = list;
+            return map;
+        }
         const headerIdx = oscFindHeaderRow(rows, ['OWNER', 'TEAM']);
         const headers = rows[headerIdx] || rows[0] || [];
         const normHeader = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -9459,12 +9688,62 @@
             const email = String(row[emailIdx] || '').toLowerCase().trim();
             const team = oscNormalizeQueueAssignment(row[teamIdx]);
             if (!email || !owner || team !== 'ERS') continue;
-            map[email] = { name: owner, email, team: 'ERS' };
+            const rec = { name: owner, email, team: 'ERS' };
+            map[email] = rec;
+            byNameKey[oscErsNormalizePersonNameKey(owner)] = rec;
+            list.push(rec);
             ownerNameToTeam[owner] = 'ERS';
         }
-        // ERS Reporting only includes coordinators whose Resource Table Team is ERS.
-        // Adam Hargis is Vended Repair, not ERS, so he is intentionally not added here.
+        map.__byNameKey = byNameKey;
+        map.__list = list;
+        // ERS Reporting only includes active coordinators whose Resource Table Team is ERS.
+        // Adam Hargis and other PM/Vended names are intentionally excluded here.
         return map;
+    }
+
+    function oscErsNormalizePersonNameKey(value) {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function oscErsNameEditDistance(a, b) {
+        a = String(a || '');
+        b = String(b || '');
+        if (a === b) return 0;
+        if (!a || !b) return Math.max(a.length, b.length);
+        const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+        for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+        for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+            }
+        }
+        return dp[a.length][b.length];
+    }
+
+    function oscErsResolveActiveCoordinator(rawName, activeCoordinatorMap) {
+        const key = oscErsNormalizePersonNameKey(rawName);
+        if (!key || !activeCoordinatorMap || !activeCoordinatorMap.__byNameKey) return null;
+        if (activeCoordinatorMap.__byNameKey[key]) return activeCoordinatorMap.__byNameKey[key];
+
+        const parts = key.split(' ').filter(Boolean);
+        const first = parts[0] || '';
+        const last = parts.length > 1 ? parts[parts.length - 1] : '';
+        if (!first || !last) return null;
+
+        // Allows harmless manual-entry spelling differences like Sydney Wooten vs Sydney Wooton,
+        // while still rejecting non-active ERS names from PM/Vended/manual Zendesk entries.
+        for (const rec of (activeCoordinatorMap.__list || [])) {
+            const recKey = oscErsNormalizePersonNameKey(rec.name);
+            const recParts = recKey.split(' ').filter(Boolean);
+            const recFirst = recParts[0] || '';
+            const recLast = recParts.length > 1 ? recParts[recParts.length - 1] : '';
+            const firstOk = first === recFirst || oscErsNameEditDistance(first, recFirst) <= 1;
+            const lastOk = last === recLast || oscErsNameEditDistance(last, recLast) <= 1;
+            if (firstOk && lastOk) return rec;
+        }
+        return null;
     }
 
     function oscBuildPreapprovedErsRepClassSet(repClassRawAOA) {
@@ -9532,12 +9811,21 @@
     function oscErsIsReportableStatus(status) {
         const s = String(status || '').toUpperCase();
         if (!s) return true;
-        if (s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED')) return false;
+        if (
+            s.includes('FINAL CHARGES') ||
+            s.includes('CLOSED') ||
+            s.includes('BILLED') ||
+            s.includes('INVOICED') ||
+            s.includes('CANCELED') ||
+            s.includes('CANCELLED') ||
+            s.includes('VOID')
+        ) return false;
         return true;
     }
 
     function oscErsStatusCategory(status) {
         const s = String(status || '').toUpperCase();
+        if (s.includes('CANCELED') || s.includes('CANCELLED') || s.includes('VOID')) return 'Canceled';
         if (s.includes('COMPLETED')) return 'Completed';
         if (s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED')) return 'Closed / Final Charges';
         return 'Open';
@@ -9586,75 +9874,410 @@
         ownerNameToTeam['Adam Hargis'] = 'VENDED REPAIR';
     }
 
-    function oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA) {
-        const ersMap = oscBuildErsCoordinatorMap(resourceRawAOA);
-        const preapprovedSet = oscBuildPreapprovedErsRepClassSet(repClassRawAOA);
-        window.oscErsCoordinatorMap = ersMap;
-        window.oscPreapprovedErsRepClassSet = preapprovedSet;
-        const rows = [];
+    function oscErsHeaderIndex(rows, candidates, fallback) {
+        const headerIdx = oscFindHeaderRow(rows || [], ['VRO', 'FORM']);
+        const header = (rows && rows[headerIdx]) ? rows[headerIdx] : ((rows && rows[0]) ? rows[0] : []);
+        const norm = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const candidateKeys = (candidates || []).map(norm);
+        for (let i = 0; i < header.length; i++) {
+            const h = norm(header[i]);
+            if (!h) continue;
+            if (candidateKeys.includes(h) || candidateKeys.some(c => h.includes(c) || c.includes(h))) return i;
+        }
+        return fallback;
+    }
+
+    function oscErsRowsFromDataset(ersAoa, activeCoordinatorMap) {
+        const rows = Array.isArray(ersAoa) ? ersAoa : [];
+        if (!rows.length) return [];
+        const headerIdx = oscFindHeaderRow(rows, ['VRO', 'FORM']);
+        const idx = {
+            createdAt: oscErsHeaderIndex(rows, ['created_at', 'Created At', 'Created Date'], 0),
+            vro: oscErsHeaderIndex(rows, ['VRO Number__c', 'VRO Number', 'VRO', 'AFS RO #', 'RO Number'], 1),
+            unit: oscErsHeaderIndex(rows, ['Unit Number__c', 'Unit Number', 'Unit No', 'Unit'], 3),
+            assignee: oscErsHeaderIndex(rows, ['assignee_name', 'Assignee Name', 'Assignee', 'Coordinator'], 4),
+            customer: oscErsHeaderIndex(rows, ['customer', 'Customer'], 6),
+            form: oscErsHeaderIndex(rows, ['form_used', 'Form Used', 'Form'], 7)
+        };
+        const out = [];
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const row = rows[i] || [];
+            const form = String(getRawCell(row, idx.form) || '').trim().toUpperCase();
+            if (form !== 'ERS FORM') continue;
+            const rawVro = String(getRawCell(row, idx.vro) || '').trim();
+            // Manual ERS entries with no VRO number cannot be matched reliably; per requirement, skip blanks.
+            if (!rawVro) continue;
+
+            const rawAssignee = String(getRawCell(row, idx.assignee) || '').trim();
+            const activeCoordinator = oscErsResolveActiveCoordinator(rawAssignee, activeCoordinatorMap);
+            // Only active ERS employees from the Resource Table should appear in ERS Reporting.
+            if (!activeCoordinator) continue;
+
+            out.push({
+                sourceRowNumber: i + 1,
+                createdAtRaw: getRawCell(row, idx.createdAt),
+                createdAtDate: parseDateSafe(getRawCell(row, idx.createdAt)),
+                rawVro,
+                unitNo: String(getRawCell(row, idx.unit) || '').trim(),
+                coordinator: activeCoordinator.name,
+                coordinatorEmail: activeCoordinator.email || '',
+                rawCoordinator: rawAssignee,
+                customerRaw: String(getRawCell(row, idx.customer) || '').trim(),
+                formUsed: form
+            });
+        }
+        return out;
+    }
+
+    function oscErsVroCandidates(value) {
+        const raw = String(value || '').toUpperCase().trim();
+        const digits = raw.replace(/\D/g, '');
+        const set = new Set();
+        const add = v => {
+            const d = String(v || '').replace(/\D/g, '');
+            if (d) set.add(d);
+        };
+        add(digits);
+
+        const hyphenParts = raw.split('-').map(p => p.replace(/\D/g, '')).filter(Boolean);
+        if (hyphenParts.length >= 2) {
+            const prefix = hyphenParts[0];
+            const suffix = hyphenParts.slice(1).join('');
+            if (prefix && suffix) {
+                set.add(prefix + suffix);
+                set.add(prefix + suffix.padStart(7, '0'));
+                set.add(prefix + suffix.padStart(6, '0'));
+            }
+        } else if (digits.length > 7) {
+            [3,4].forEach(prefixLen => {
+                if (digits.length > prefixLen) {
+                    const prefix = digits.slice(0, prefixLen);
+                    const suffix = digits.slice(prefixLen);
+                    set.add(prefix + suffix);
+                    set.add(prefix + suffix.padStart(7, '0'));
+                    set.add(prefix + suffix.padStart(6, '0'));
+                }
+            });
+        }
+        return Array.from(set).filter(Boolean);
+    }
+
+    function oscErsUnitKey(value) {
+        const raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!raw) return '';
+        // Unit formatting varies. Use the alphanumeric key and a numeric-tail key for loose verification only.
+        const digits = raw.replace(/\D/g, '').replace(/^0+/, '');
+        return raw + (digits ? `|${digits}` : '');
+    }
+
+    function oscErsUnitsSimilar(a, b) {
+        const ak = oscErsUnitKey(a);
+        const bk = oscErsUnitKey(b);
+        if (!ak || !bk) return false;
+        const aParts = ak.split('|').filter(Boolean);
+        const bParts = bk.split('|').filter(Boolean);
+        return aParts.some(x => bParts.some(y => x === y || (x.length >= 4 && y.length >= 4 && (x.endsWith(y) || y.endsWith(x)))));
+    }
+
+    function oscErsDateDaysApart(a, b) {
+        const da = parseDateSafe(a);
+        const db = parseDateSafe(b);
+        if (!da || !db) return null;
+        const aDay = new Date(da.getFullYear(), da.getMonth(), da.getDate()).getTime();
+        const bDay = new Date(db.getFullYear(), db.getMonth(), db.getDate()).getTime();
+        return Math.abs(aDay - bDay) / 86400000;
+    }
+
+    function oscErsFormatDate(value) {
+        const d = parseDateSafe(value);
+        if (!d) return String(value || '').trim();
+        return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+    }
+
+    function oscBuildMasterErsMatchIndex(vroRaw) {
+        const byCandidate = {};
+        const all = [];
+        const nonReportableByCandidate = {};
+        const nonReportableAll = [];
+        const nonReportableSeen = new Set();
+
+        const addCandidate = (rec) => {
+            if (!rec || !rec.roNum) return;
+            all.push(rec);
+            (rec.keys || oscErsVroCandidates(rec.roNum)).forEach(k => {
+                if (!byCandidate[k]) byCandidate[k] = [];
+                if (!byCandidate[k].some(existing => existing.roNum === rec.roNum && existing.ro === rec.ro)) byCandidate[k].push(rec);
+            });
+        };
+
+        const addNonReportableCandidate = (rec) => {
+            if (!rec || !rec.roNum || oscErsIsReportableStatus(rec.status)) return;
+            const seenKey = `${rec.roNum}|${String(rec.status || '').toUpperCase()}`;
+            if (nonReportableSeen.has(seenKey)) return;
+            nonReportableSeen.add(seenKey);
+            nonReportableAll.push(rec);
+            (rec.keys || oscErsVroCandidates(rec.roNum)).forEach(k => {
+                if (!nonReportableByCandidate[k]) nonReportableByCandidate[k] = [];
+                nonReportableByCandidate[k].push(rec);
+            });
+        };
+
+        (processedData || []).forEach(ro => {
+            if (!ro || !ro.roNum) return;
+            const keys = oscErsVroCandidates(ro.roNum);
+            const rec = {
+                ro,
+                roNum: ro.roNum,
+                unitNo: ro.unitNo || '',
+                opened: ro.openedFormatted || '',
+                customer: ro.rawCustomerLocation || ro.customer || '',
+                status: ro.status || '',
+                keys
+            };
+            addCandidate(rec);
+            addNonReportableCandidate(rec);
+        });
         (vroRaw || []).forEach(vro => {
             const rowValues = vro && vro.__rowValues ? vro.__rowValues : [];
-            const roNum = normalizeOrderKey((vro && vro.__orderFromColumnH) || getRawCell(rowValues, 7) || getCol(vro, ['Order', 'RO Number', 'RONum', 'AFS RO #']));
+            const roNum = normalizeOrderKey((vro && vro.__orderFromColumnH) || getRawCell(rowValues, 7) || getCol(vro, ['Order', 'VRO Number__c', 'VRO Number', 'RO Number', 'RONum', 'AFS RO #']));
             if (!roNum) return;
-            const ownerEmail = String(getRawCell(rowValues, 13) || getCol(vro, ['Owner', 'Created By', 'Email']) || '').trim().toLowerCase();
-            const coordinator = ersMap[ownerEmail];
-            if (!coordinator) return;
             const ro = oscFindProcessedRoByNumber(roNum);
-            const status = String((ro && ro.status) || getCol(vro, ['Status']) || getRawCell(rowValues, 14) || '').trim();
-            const customerRaw = String(getRawCell(rowValues, 0) || getCol(vro, ['Customer']) || (ro && ro.rawCustomerLocation) || '').trim();
-            const customerName = oscErsCustomerDisplayFromText(customerRaw, ro);
-            const currentRepClass = String((ro && ro.originalRepClass) || getRawCell(rowValues, 4) || getCol(vro, ['Type', 'REPCLASS', 'Repair Class']) || '').trim();
-            const expectedRepClass = oscErsExpectedRepClassForCustomer(customerRaw + ' ' + customerName);
+            const rawStatus = String(getRawCell(rowValues, 14) || getCol(vro, ['Status']) || (ro && ro.status) || '').trim();
+            const keys = oscErsVroCandidates(roNum);
+            const rec = {
+                ro: ro || null,
+                roNum,
+                unitNo: (ro && ro.unitNo) || String(getRawCell(rowValues, 3) || getCol(vro, ['Unit Number__c', 'Unit No', 'UNITNUMBER', 'Vehicle']) || '').trim(),
+                opened: (ro && ro.openedFormatted) || String(getRawCell(rowValues, 8) || getCol(vro, ['Opened', 'ROOpenedDate', 'Created Date']) || '').trim(),
+                customer: (ro && ro.rawCustomerLocation) || String(getRawCell(rowValues, 0) || getCol(vro, ['Customer']) || '').trim(),
+                status: rawStatus,
+                keys
+            };
+            addNonReportableCandidate(rec);
+            if (!ro) return;
+            keys.forEach(k => {
+                if (!byCandidate[k]) byCandidate[k] = [];
+                if (!byCandidate[k].some(existing => existing.ro === ro)) byCandidate[k].push(rec);
+            });
+        });
+        let maxOpenedDate = null;
+        all.forEach(rec => {
+            const d = parseDateSafe(rec.opened);
+            if (d && (!maxOpenedDate || d.getTime() > maxOpenedDate.getTime())) maxOpenedDate = d;
+        });
+        return { byCandidate, all, maxOpenedDate, nonReportableByCandidate, nonReportableAll };
+    }
+
+    function oscErsFindBestMasterMatch(ersRow, matchIndex) {
+        const candidates = new Map();
+        const ersKeys = oscErsVroCandidates(ersRow.rawVro);
+        ersKeys.forEach(k => (matchIndex.byCandidate[k] || []).forEach(rec => candidates.set(rec.roNum, { rec, reason: 'VRO normalized / zero-fill match' })));
+
+        // If a manual VRO is missing zeroes, catch same-prefix + same numeric ending matches.
+        if (!candidates.size) {
+            const ersDigits = String(ersRow.rawVro || '').replace(/\D/g, '');
+            const ersSuffix = ersDigits.slice(-6).replace(/^0+/, '');
+            const ersPrefix4 = ersDigits.slice(0, 4);
+            const ersPrefix3 = ersDigits.slice(0, 3);
+            (matchIndex.all || []).forEach(rec => {
+                const masterDigits = String(rec.roNum || '').replace(/\D/g, '');
+                const masterSuffix = masterDigits.slice(-7).replace(/^0+/, '');
+                const samePrefix = (ersPrefix4 && masterDigits.startsWith(ersPrefix4)) || (ersPrefix3 && masterDigits.startsWith(ersPrefix3));
+                const sameTail = ersSuffix && masterSuffix && (masterSuffix.endsWith(ersSuffix) || ersSuffix.endsWith(masterSuffix));
+                if (samePrefix && sameTail) candidates.set(rec.roNum, { rec, reason: 'Closest VRO digit-pattern match' });
+            });
+        }
+
+        let best = null;
+        candidates.forEach(item => {
+            const rec = item.rec;
+            let score = item.reason === 'VRO normalized / zero-fill match' ? 90 : 72;
+            const days = oscErsDateDaysApart(ersRow.createdAtDate || ersRow.createdAtRaw, rec.opened);
+            if (days !== null) {
+                if (days <= 7) score += 8;
+                else if (days <= 30) score += 4;
+                else if (days > 180) score -= 12;
+            }
+            if (oscErsUnitsSimilar(ersRow.unitNo, rec.unitNo)) score += 4;
+            const customerA = oscErsCustomerDisplayFromText(ersRow.customerRaw || '', null);
+            const customerB = oscErsCustomerDisplayFromText(rec.customer || '', rec.ro);
+            if (customerA && customerB && customerA === customerB) score += 3;
+            const result = {
+                ro: rec.ro,
+                score: Math.max(0, Math.min(99, Math.round(score))),
+                reason: item.reason,
+                daysApart: days,
+                unitVerified: oscErsUnitsSimilar(ersRow.unitNo, rec.unitNo)
+            };
+            if (!best || result.score > best.score) best = result;
+        });
+        if (best && best.score >= 70) return best;
+        return null;
+    }
+
+
+    function oscErsFindNonReportableMasterStatusMatch(ersRow, matchIndex) {
+        const candidates = new Map();
+        const ersKeys = oscErsVroCandidates(ersRow.rawVro);
+        ersKeys.forEach(k => ((matchIndex && matchIndex.nonReportableByCandidate && matchIndex.nonReportableByCandidate[k]) || []).forEach(rec => candidates.set(rec.roNum, { rec, reason: 'Matched non-reportable master VRO status' })));
+
+        if (!candidates.size) {
+            const ersDigits = String(ersRow.rawVro || '').replace(/\D/g, '');
+            const ersSuffix = ersDigits.slice(-6).replace(/^0+/, '');
+            const ersPrefix4 = ersDigits.slice(0, 4);
+            const ersPrefix3 = ersDigits.slice(0, 3);
+            ((matchIndex && matchIndex.nonReportableAll) || []).forEach(rec => {
+                const masterDigits = String(rec.roNum || '').replace(/\D/g, '');
+                const masterSuffix = masterDigits.slice(-7).replace(/^0+/, '');
+                const samePrefix = (ersPrefix4 && masterDigits.startsWith(ersPrefix4)) || (ersPrefix3 && masterDigits.startsWith(ersPrefix3));
+                const sameTail = ersSuffix && masterSuffix && (masterSuffix.endsWith(ersSuffix) || ersSuffix.endsWith(masterSuffix));
+                if (samePrefix && sameTail) candidates.set(rec.roNum, { rec, reason: 'Matched non-reportable VRO by digit-pattern' });
+            });
+        }
+
+        let best = null;
+        candidates.forEach(item => {
+            const rec = item.rec;
+            if (!rec || oscErsIsReportableStatus(rec.status)) return;
+            let score = item.reason === 'Matched non-reportable master VRO status' ? 90 : 72;
+            const days = oscErsDateDaysApart(ersRow.createdAtDate || ersRow.createdAtRaw, rec.opened);
+            if (days !== null) {
+                if (days <= 7) score += 8;
+                else if (days <= 30) score += 4;
+                else if (days > 180) score -= 12;
+            }
+            if (oscErsUnitsSimilar(ersRow.unitNo, rec.unitNo)) score += 4;
+            const customerA = oscErsCustomerDisplayFromText(ersRow.customerRaw || '', null);
+            const customerB = oscErsCustomerDisplayFromText(rec.customer || '', rec.ro);
+            if (customerA && customerB && customerA === customerB) score += 3;
+            const result = {
+                roNum: rec.roNum,
+                status: rec.status || '',
+                score: Math.max(0, Math.min(99, Math.round(score))),
+                reason: item.reason,
+                daysApart: days,
+                unitVerified: oscErsUnitsSimilar(ersRow.unitNo, rec.unitNo)
+            };
+            if (!best || result.score > best.score) best = result;
+        });
+        if (best && best.score >= 70) return best;
+        return null;
+    }
+
+    function oscErsShouldReportUnmatchedRow(ersRow, matchIndex) {
+        // Unmatched records from very old ERS.xlsx history can flood the report because the current
+        // master workbook may no longer carry enough detail to verify them. Keep recent unmatched
+        // manual entries visible as "unidentified" so operations can review real current misses.
+        const created = parseDateSafe(ersRow && (ersRow.createdAtDate || ersRow.createdAtRaw));
+        if (!created) return true;
+
+        let reference = matchIndex && matchIndex.maxOpenedDate ? matchIndex.maxOpenedDate : new Date();
+        if (!(reference instanceof Date) || isNaN(reference.getTime())) reference = new Date();
+
+        const cutoff = new Date(reference.getTime());
+        cutoff.setDate(cutoff.getDate() - 30);
+        return created.getTime() >= cutoff.getTime();
+    }
+
+    function oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA) {
+        const activeCoordinatorMap = oscBuildErsCoordinatorMap(resourceRawAOA);
+        window.oscActiveErsCoordinatorMap = activeCoordinatorMap;
+        const ersDatasetRows = oscErsRowsFromDataset(latestErsDatasetAOA || [], activeCoordinatorMap);
+        const preapprovedSet = oscBuildPreapprovedErsRepClassSet(repClassRawAOA);
+        window.oscPreapprovedErsRepClassSet = preapprovedSet;
+        window.oscTrueErsDatasetRows = ersDatasetRows;
+        const matchIndex = oscBuildMasterErsMatchIndex(vroRaw);
+        const rows = [];
+        const seen = new Set();
+
+        ersDatasetRows.forEach(ersRow => {
+            const match = oscErsFindBestMasterMatch(ersRow, matchIndex);
+            const ro = match && match.ro ? match.ro : null;
+            const status = String((ro && ro.status) || '').trim();
+
+            // Do not allow Final Charges / Closed / Canceled VROs into ERS Reporting or drilldowns.
+            // Some manual ERS.xlsx rows do not match processed open work but do exist in VRO Export as
+            // canceled/final-charge records. Suppress those before they become unidentified errors.
+            if (ro && !oscErsIsReportableStatus(status)) return;
+            if (!ro) {
+                const nonReportableMatch = oscErsFindNonReportableMasterStatusMatch(ersRow, matchIndex);
+                if (nonReportableMatch) return;
+            }
+
+            const roNum = ro ? normalizeOrderKey(ro.roNum) : normalizeOrderKey(ersRow.rawVro);
+            const dedupeKey = `${ersRow.sourceRowNumber}|${roNum}|${ersRow.createdAtRaw || ''}`;
+            if (seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+
+            const customerRaw = String((ro && (ro.rawCustomerLocation || ro.customer || ro.preBillingCustomer)) || ersRow.customerRaw || '').trim();
+            const customerName = oscErsCustomerDisplayFromText(customerRaw || ersRow.customerRaw, ro);
+            const currentRepClass = String((ro && ro.originalRepClass) || '').trim();
+            const expectedRepClass = oscErsExpectedRepClassForCustomer((ersRow.customerRaw || '') + ' ' + customerRaw + ' ' + customerName);
             const currentKey = oscNormalizeErsRepClassCompareKey(currentRepClass);
             const expectedKey = oscNormalizeErsRepClassCompareKey(expectedRepClass);
             const isPreapproved = !!(currentKey && preapprovedSet.has(currentKey));
             const isGlobalApprovedErsClass = currentKey === oscNormalizeErsRepClassCompareKey('OSC RD');
             let errorReason = '';
-            if (!currentKey) errorReason = 'Missing REPCLASS';
+            if (!ro) errorReason = 'Unidentified ERS event - no master VRO match; needs review';
+            else if (!currentKey) errorReason = 'Missing REPCLASS';
             else if (!isPreapproved) errorReason = 'REPCLASS is not preapproved for ERS';
             else if (isGlobalApprovedErsClass) errorReason = '';
             else if (expectedKey && currentKey !== expectedKey) errorReason = `Customer requires ${expectedRepClass}`;
+
             const isError = !!errorReason;
-            const reportable = oscErsIsReportableStatus(status);
+            const reportable = ro ? oscErsIsReportableStatus(status) : true;
+            if (!ro && !oscErsShouldReportUnmatchedRow(ersRow, matchIndex)) return;
+            const matchStatus = ro ? `${match.reason} (${match.score}% confidence${match.unitVerified ? ', unit verified' : ''}${match.daysApart !== null ? `, ${Math.round(match.daysApart)} days from opened date` : ''})` : 'Unmatched recent ERS.xlsx row';
+
             if (ro) {
                 ro.isErsCoordinatorCreated = true;
                 ro.ersReportingOnly = true;
-                ro.ersCoordinatorName = coordinator.name;
-                ro.ersCoordinatorEmail = coordinator.email;
+                ro.ersCoordinatorName = ersRow.coordinator;
+                ro.ersCoordinatorEmail = ersRow.coordinatorEmail || '';
                 ro.ersCurrentRepClass = currentRepClass;
                 ro.ersExpectedRepClass = expectedRepClass;
                 ro.ersRepClassMismatch = isError;
                 ro.ersMismatchReason = errorReason;
+                ro.ersDatasetMatched = true;
+                ro.ersDatasetMatchStatus = matchStatus;
                 ro.sourceQueue = 'ERS';
                 ro.createdByTeam = 'ERS';
-                ro.createdByName = coordinator.name;
+                ro.createdByName = ersRow.coordinator;
             }
+
             rows.push({
-                coordinator: coordinator.name,
-                coordinatorEmail: coordinator.email,
+                coordinator: ersRow.coordinator,
+                coordinatorEmail: ersRow.coordinatorEmail || '',
                 roNum,
-                roUrl: `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum)}`,
+                ersRawVro: ersRow.rawVro,
+                roUrl: ro ? `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum)}` : '',
                 customerName,
-                rawCustomer: customerRaw,
+                rawCustomer: customerRaw || ersRow.customerRaw,
                 currentRepClass,
                 expectedRepClass,
                 isPreapproved,
                 isError,
                 errorReason: errorReason || 'Correct',
                 status,
-                statusCategory: oscErsStatusCategory(status),
+                statusCategory: ro ? oscErsStatusCategory(status) : 'Unidentified',
                 reportable,
-                unitNo: (ro && ro.unitNo) || String(getRawCell(rowValues, 3) || getCol(vro, ['Unit No', 'UNITNUMBER', 'Vehicle']) || '').trim(),
-                openedFormatted: (ro && ro.openedFormatted) || String(getRawCell(rowValues, 8) || getCol(vro, ['Opened', 'ROOpenedDate']) || '').trim()
+                unitNo: (ro && ro.unitNo) || '',
+                ersUnitNo: ersRow.unitNo || '',
+                openedFormatted: (ro && ro.openedFormatted) || '',
+                ersCreatedAt: oscErsFormatDate(ersRow.createdAtRaw),
+                matchStatus,
+                matchConfidence: ro ? match.score : 0,
+                sourceRowNumber: ersRow.sourceRowNumber
             });
         });
+
         window.globalErsReportingRows = rows;
         try { renderErsReportingCoordinatorFilter(); } catch(e) {}
         return rows;
     }
 
     function getErsReportableRows() {
-        return (window.globalErsReportingRows || []).filter(r => r && r.reportable);
+        return (window.globalErsReportingRows || []).filter(r => r && r.reportable && oscErsIsReportableStatus(r.status || ''));
     }
 
     function renderErsReportingCoordinatorFilter() {
@@ -9726,15 +10349,15 @@
         const coordinatorCount = new Set(filteredRows.map(r => r.coordinator)).size;
         if (summary) {
             summary.innerHTML = `
-                <div class="ers-reporting-summary-card"><div class="summary-label">ERS Classification Score</div><div class="summary-value">${score}%</div><div class="summary-sub">Correct ERS REPCLASS / Total ERS VROs</div></div>
-                <div class="ers-reporting-summary-card"><div class="summary-label">Total ERS VROs</div><div class="summary-value">${total}</div><div class="summary-sub">Open or Completed, excluding Closed / Final Charges</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">ERS Classification Score</div><div class="summary-value">${score}%</div><div class="summary-sub">Correct ERS REPCLASS / True ERS FORM events</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">True ERS Events</div><div class="summary-value">${total}</div><div class="summary-sub">Matched from ERS.xlsx, excluding Closed / Final Charges / Canceled when master status is found</div></div>
                 <div class="ers-reporting-summary-card"><div class="summary-label">Correct</div><div class="summary-value">${correct}</div><div class="summary-sub">Preapproved and customer-matched</div></div>
                 <div class="ers-reporting-summary-card"><div class="summary-label">Errors / Mismatches</div><div class="summary-value">${errors}</div><div class="summary-sub">Needs ERS REPCLASS correction</div></div>
-                <div class="ers-reporting-summary-card"><div class="summary-label">Coordinators</div><div class="summary-value">${coordinatorCount}</div><div class="summary-sub">ERS creators from Resource Table</div></div>`;
+                <div class="ers-reporting-summary-card"><div class="summary-label">Coordinators</div><div class="summary-value">${coordinatorCount}</div><div class="summary-sub">Active ERS team from Resource Table</div></div>`;
         }
         const groups = getErsCoordinatorGroups();
         if (!groups.length) {
-            body.innerHTML = '<tr><td colspan="6"><div class="ers-reporting-message">No ERS-created VROs found for this filter.</div></td></tr>';
+            body.innerHTML = '<tr><td colspan="6"><div class="ers-reporting-message">No true ERS FORM events found for active ERS coordinators from ERS.xlsx for this filter.</div></td></tr>';
             return;
         }
         let html = '';
@@ -9752,26 +10375,29 @@
                 <td>${actionText}</td>
             </tr>`;
             if (expanded) {
-                const detailRows = g.errorRows.filter(r => r && r.isError).slice().sort((a,b) => (a.customerName || '').localeCompare(b.customerName || '') || (a.roNum || '').localeCompare(b.roNum || ''));
+                const detailRows = g.errorRows.filter(r => r && r.isError && r.reportable && oscErsIsReportableStatus(r.status || '')).slice().sort((a,b) => (a.customerName || '').localeCompare(b.customerName || '') || (a.roNum || '').localeCompare(b.roNum || ''));
                 let detailHtml = '';
                 if (!detailRows.length) {
-                    detailHtml = '<tr><td colspan="7" style="text-align:center;color:#64748b;font-weight:800;">No error-state VROs for this coordinator.</td></tr>';
+                    detailHtml = '<tr><td colspan="10" style="text-align:center;color:#64748b;font-weight:800;">No error-state VROs for this coordinator.</td></tr>';
                 } else {
                     detailRows.forEach(r => {
                         detailHtml += `<tr>
                             <td>${escapeHtml(r.customerName || '')}</td>
-                            <td><a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum || '')}</a></td>
+                            <td>${r.roUrl ? `<a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum || '')}</a>` : escapeHtml(r.roNum || '')}</td>
+                            <td>${escapeHtml(r.ersRawVro || '')}</td>
                             <td>${escapeHtml(r.currentRepClass || '')}</td>
                             <td>${escapeHtml(r.expectedRepClass || 'Preapproved ERS REPCLASS')}</td>
                             <td>${escapeHtml(r.statusCategory || '')}</td>
                             <td>${escapeHtml(r.status || '')}</td>
+                            <td>${escapeHtml(r.ersCreatedAt || '')}</td>
+                            <td>${escapeHtml(r.matchStatus || '')}</td>
                             <td><span class="ers-error-pill">${escapeHtml(r.errorReason || '')}</span></td>
                         </tr>`;
                     });
                 }
                 html += `<tr><td colspan="6" class="ers-detail-cell"><div class="ers-detail-wrap">
                     <table class="ers-detail-table">
-                        <thead><tr><th>Customer Name</th><th>VRO Number</th><th>Current REPCLASS</th><th>Expected REPCLASS</th><th>Open / Completed</th><th>Status</th><th>Error / Mismatch</th></tr></thead>
+                        <thead><tr><th>Customer Name</th><th>Master VRO</th><th>ERS VRO Entry</th><th>Current REPCLASS</th><th>Expected REPCLASS</th><th>Open / Completed</th><th>Status</th><th>ERS Created</th><th>Match Audit</th><th>Error / Mismatch</th></tr></thead>
                         <tbody>${detailHtml}</tbody>
                     </table>
                 </div></td></tr>`;
@@ -9793,39 +10419,49 @@
 
         const aoa = [[
             'Coordinator',
-            'Coordinator Email',
             'Customer Name',
-            'VRO Number',
+            'Master VRO Number',
+            'ERS VRO Entry',
             'Current REPCLASS',
             'Expected REPCLASS',
             'Correction Needed',
             'Open / Completed',
             'Status',
-            'Unit No',
-            'Opened Date'
+            'Master Unit No',
+            'ERS Unit Entry',
+            'Master Opened Date',
+            'ERS Created At',
+            'Match Audit',
+            'Match Confidence',
+            'ERS.xlsx Row'
         ]];
 
         rows.forEach(r => {
             aoa.push([
                 r.coordinator || '',
-                r.coordinatorEmail || '',
                 r.customerName || '',
                 r.roNum || '',
+                r.ersRawVro || '',
                 r.currentRepClass || '',
                 r.expectedRepClass || 'Preapproved ERS REPCLASS',
                 r.errorReason || 'Mismatch / error',
                 r.statusCategory || '',
                 r.status || '',
                 r.unitNo || '',
-                r.openedFormatted || ''
+                r.ersUnitNo || '',
+                r.openedFormatted || '',
+                r.ersCreatedAt || '',
+                r.matchStatus || '',
+                r.matchConfidence || '',
+                r.sourceRowNumber || ''
             ]);
         });
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws['!cols'] = [
-            {wch:24},{wch:30},{wch:24},{wch:18},{wch:22},{wch:24},{wch:38},{wch:16},{wch:26},{wch:18},{wch:18}
+            {wch:24},{wch:24},{wch:18},{wch:18},{wch:22},{wch:24},{wch:42},{wch:16},{wch:26},{wch:18},{wch:18},{wch:18},{wch:18},{wch:52},{wch:14},{wch:12}
         ];
-        ws['!autofilter'] = { ref: `A1:K${Math.max(aoa.length, 1)}` };
+        ws['!autofilter'] = { ref: `A1:P${Math.max(aoa.length, 1)}` };
 
         const headerStyle = {
             font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -9862,7 +10498,7 @@
                 ws[addr].s = bodyStyle;
             }
             const sourceRow = rows[r - 1];
-            const vroCell = XLSX.utils.encode_cell({ r, c: 3 });
+            const vroCell = XLSX.utils.encode_cell({ r, c: 2 });
             if (ws[vroCell] && sourceRow && sourceRow.roUrl) {
                 ws[vroCell].l = { Target: sourceRow.roUrl, Tooltip: 'Open VRO in AFS Hub' };
                 ws[vroCell].s = linkStyle;
