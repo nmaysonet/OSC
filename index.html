@@ -827,7 +827,7 @@
                             </tr>
                         </thead>
                         <tbody id="ers-reporting-body">
-                            <tr><td colspan="6"><div class="ers-reporting-message">ERS Reporting will load after master_workFLOWtest.xlsx and ERS.xlsx are processed.</div></td></tr>
+                            <tr><td colspan="6"><div class="ers-reporting-message">ERS Reporting will load after master_workFLOWtest.xlsx is processed.</div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1244,23 +1244,10 @@
         }
 
         async function loadErsDatasetFromFirebase() {
+            // ERS Reporting reverted to the original VRO Export Column N checker.
+            // ERS.xlsx is intentionally not fetched or parsed in this build.
             latestErsDatasetAOA = [];
-            const ersBuffer = await fetchWorkbookBufferFromStorage('ERS.xlsx', { optional: true });
-            if (!ersBuffer) {
-                console.warn('ERS.xlsx was not found. ERS Reporting will not show true ERS event matches until the file is uploaded to Firebase Storage.');
-                return [];
-            }
-            try {
-                const ersWorkbook = XLSX.read(ersBuffer, { type: 'array' });
-                const targetSheet = (ersWorkbook.SheetNames || []).find(name => String(name || '').toLowerCase().includes('data') || String(name || '').toLowerCase().includes('ers')) || (ersWorkbook.SheetNames || [])[0];
-                latestErsDatasetAOA = targetSheet ? (XLSX.utils.sheet_to_json(ersWorkbook.Sheets[targetSheet], { header: 1, defval: '' }) || []) : [];
-                console.log('OSC+ ERS.xlsx loaded:', latestErsDatasetAOA.length, 'rows');
-                return latestErsDatasetAOA;
-            } catch (err) {
-                console.warn('ERS.xlsx could not be parsed. ERS Reporting will load without true ERS event matching.', err);
-                latestErsDatasetAOA = [];
-                return [];
-            }
+            return [];
         }
 
         function sheetToAoaWithHyperlinks(sheet, baseAoa) {
@@ -1412,9 +1399,6 @@
 
                 statusEl.innerText = 'Loading AI Ref.xlsx for Repair Class Compliance...';
                 await loadAiRefFromFirebase();
-                statusEl.innerText = 'Loading ERS.xlsx for true ERS event matching...';
-                await loadErsDatasetFromFirebase();
-
                 processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
                 try {
@@ -1523,7 +1507,6 @@
                 });
 
                 await loadAiRefFromFirebase();
-                await loadErsDatasetFromFirebase();
                 processExcelData(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA);
                 initFirebaseSync();
                 try {
@@ -3952,6 +3935,8 @@
             const ownerText = String(unitRecord.owner || '').trim().toUpperCase();
             const branchText = String(unitRecord.branch || '').trim().toUpperCase();
             const teamText = String(unitRecord.siteTeam || getBranchTeamFromMap(unitRecord.branch) || '').trim().toUpperCase();
+            const branchCode = extractGardaCode(unitRecord.branch) || normalizeBranchStr(unitRecord.branch);
+            const custKey = getCustKey(unitRecord.branch || '');
 
             // New OSC+ uses state-level Resource Table ownership instead of branch/team rows.
             // That means many Garda vended sites no longer have a branch-level Team value.
@@ -3960,6 +3945,12 @@
 
             // If a real non-vended team is present, keep it out of the VDR summary.
             if (teamText === 'PM' || teamText === 'PREVENTATIVE MAINTENANCE' || teamText === 'PREVENTIVE MAINTENANCE' || teamText === 'ERS') return false;
+
+            // For Garda, the Useful tab is the vended branch population provided for Consolidation Summary.
+            // This prevents Dedicated/non-vended Garda sites from leaking into the vended consolidation export.
+            if (custKey === 'GARDA' && gardaVendedBranchCodeSet && gardaVendedBranchCodeSet.size) {
+                if (!branchCode || !gardaVendedBranchCodeSet.has(branchCode)) return false;
+            }
 
             // Explicit Vended Repair is valid. Blank / N/A / NOT FOUND is also valid for Garda OOS sites
             // because the OOS tab is now the source of the branch population while Resource Table owns states.
@@ -6220,6 +6211,7 @@
             const today = new Date(); today.setHours(0, 0, 0, 0);
             
             branchUsefulMap = {};
+            gardaVendedBranchCodeSet = new Set();
             branchMetricsMap = {};
 
             // Parse DoD Tab
@@ -6263,6 +6255,7 @@
                     };
                     
                     branchUsefulMap[bCode] = pcts;
+                    if (bCode) gardaVendedBranchCodeSet.add(bCode);
                 }
             }
 
@@ -10165,7 +10158,7 @@
     }
 
     function oscErsShouldReportUnmatchedRow(ersRow, matchIndex) {
-        // Unmatched records from very old ERS.xlsx history can flood the report because the current
+        // Legacy unmatched ERS manual history can flood the report because the current
         // master workbook may no longer carry enough detail to verify them. Keep recent unmatched
         // manual entries visible as "unidentified" so operations can review real current misses.
         const created = parseDateSafe(ersRow && (ersRow.createdAtDate || ersRow.createdAtRaw));
@@ -10180,97 +10173,67 @@
     }
 
     function oscTagErsCreatedRows(vroRaw, resourceRawAOA, repClassRawAOA) {
-        const activeCoordinatorMap = oscBuildErsCoordinatorMap(resourceRawAOA);
-        window.oscActiveErsCoordinatorMap = activeCoordinatorMap;
-        const ersDatasetRows = oscErsRowsFromDataset(latestErsDatasetAOA || [], activeCoordinatorMap);
+        const ersMap = oscBuildErsCoordinatorMap(resourceRawAOA);
         const preapprovedSet = oscBuildPreapprovedErsRepClassSet(repClassRawAOA);
+        window.oscErsCoordinatorMap = ersMap;
         window.oscPreapprovedErsRepClassSet = preapprovedSet;
-        window.oscTrueErsDatasetRows = ersDatasetRows;
-        const matchIndex = oscBuildMasterErsMatchIndex(vroRaw);
         const rows = [];
-        const seen = new Set();
-
-        ersDatasetRows.forEach(ersRow => {
-            const match = oscErsFindBestMasterMatch(ersRow, matchIndex);
-            const ro = match && match.ro ? match.ro : null;
-            const status = String((ro && ro.status) || '').trim();
-
-            // Do not allow Final Charges / Closed / Canceled VROs into ERS Reporting or drilldowns.
-            // Some manual ERS.xlsx rows do not match processed open work but do exist in VRO Export as
-            // canceled/final-charge records. Suppress those before they become unidentified errors.
-            if (ro && !oscErsIsReportableStatus(status)) return;
-            if (!ro) {
-                const nonReportableMatch = oscErsFindNonReportableMasterStatusMatch(ersRow, matchIndex);
-                if (nonReportableMatch) return;
-            }
-
-            const roNum = ro ? normalizeOrderKey(ro.roNum) : normalizeOrderKey(ersRow.rawVro);
-            const dedupeKey = `${ersRow.sourceRowNumber}|${roNum}|${ersRow.createdAtRaw || ''}`;
-            if (seen.has(dedupeKey)) return;
-            seen.add(dedupeKey);
-
-            const customerRaw = String((ro && (ro.rawCustomerLocation || ro.customer || ro.preBillingCustomer)) || ersRow.customerRaw || '').trim();
-            const customerName = oscErsCustomerDisplayFromText(customerRaw || ersRow.customerRaw, ro);
-            const currentRepClass = String((ro && ro.originalRepClass) || '').trim();
-            const expectedRepClass = oscErsExpectedRepClassForCustomer((ersRow.customerRaw || '') + ' ' + customerRaw + ' ' + customerName);
+        (vroRaw || []).forEach(vro => {
+            const rowValues = vro && vro.__rowValues ? vro.__rowValues : [];
+            const roNum = normalizeOrderKey((vro && vro.__orderFromColumnH) || getRawCell(rowValues, 7) || getCol(vro, ['Order', 'RO Number', 'RONum', 'AFS RO #']));
+            if (!roNum) return;
+            const ownerEmail = String(getRawCell(rowValues, 13) || getCol(vro, ['Owner', 'Created By', 'Email']) || '').trim().toLowerCase();
+            const coordinator = ersMap[ownerEmail];
+            if (!coordinator) return;
+            const ro = oscFindProcessedRoByNumber(roNum);
+            const status = String((ro && ro.status) || getCol(vro, ['Status']) || getRawCell(rowValues, 14) || '').trim();
+            const customerRaw = String(getRawCell(rowValues, 0) || getCol(vro, ['Customer']) || (ro && ro.rawCustomerLocation) || '').trim();
+            const customerName = oscErsCustomerDisplayFromText(customerRaw, ro);
+            const currentRepClass = String((ro && ro.originalRepClass) || getRawCell(rowValues, 4) || getCol(vro, ['Type', 'REPCLASS', 'Repair Class']) || '').trim();
+            const expectedRepClass = oscErsExpectedRepClassForCustomer(customerRaw + ' ' + customerName);
             const currentKey = oscNormalizeErsRepClassCompareKey(currentRepClass);
             const expectedKey = oscNormalizeErsRepClassCompareKey(expectedRepClass);
             const isPreapproved = !!(currentKey && preapprovedSet.has(currentKey));
             const isGlobalApprovedErsClass = currentKey === oscNormalizeErsRepClassCompareKey('OSC RD');
             let errorReason = '';
-            if (!ro) errorReason = 'Unidentified ERS event - no master VRO match; needs review';
-            else if (!currentKey) errorReason = 'Missing REPCLASS';
+            if (!currentKey) errorReason = 'Missing REPCLASS';
             else if (!isPreapproved) errorReason = 'REPCLASS is not preapproved for ERS';
             else if (isGlobalApprovedErsClass) errorReason = '';
             else if (expectedKey && currentKey !== expectedKey) errorReason = `Customer requires ${expectedRepClass}`;
-
             const isError = !!errorReason;
-            const reportable = ro ? oscErsIsReportableStatus(status) : true;
-            if (!ro && !oscErsShouldReportUnmatchedRow(ersRow, matchIndex)) return;
-            const matchStatus = ro ? `${match.reason} (${match.score}% confidence${match.unitVerified ? ', unit verified' : ''}${match.daysApart !== null ? `, ${Math.round(match.daysApart)} days from opened date` : ''})` : 'Unmatched recent ERS.xlsx row';
-
+            const reportable = oscErsIsReportableStatus(status);
             if (ro) {
                 ro.isErsCoordinatorCreated = true;
                 ro.ersReportingOnly = true;
-                ro.ersCoordinatorName = ersRow.coordinator;
-                ro.ersCoordinatorEmail = ersRow.coordinatorEmail || '';
+                ro.ersCoordinatorName = coordinator.name;
+                ro.ersCoordinatorEmail = coordinator.email;
                 ro.ersCurrentRepClass = currentRepClass;
                 ro.ersExpectedRepClass = expectedRepClass;
                 ro.ersRepClassMismatch = isError;
                 ro.ersMismatchReason = errorReason;
-                ro.ersDatasetMatched = true;
-                ro.ersDatasetMatchStatus = matchStatus;
                 ro.sourceQueue = 'ERS';
                 ro.createdByTeam = 'ERS';
-                ro.createdByName = ersRow.coordinator;
+                ro.createdByName = coordinator.name;
             }
-
             rows.push({
-                coordinator: ersRow.coordinator,
-                coordinatorEmail: ersRow.coordinatorEmail || '',
+                coordinator: coordinator.name,
+                coordinatorEmail: coordinator.email,
                 roNum,
-                ersRawVro: ersRow.rawVro,
-                roUrl: ro ? `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum)}` : '',
+                roUrl: `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(roNum)}`,
                 customerName,
-                rawCustomer: customerRaw || ersRow.customerRaw,
+                rawCustomer: customerRaw,
                 currentRepClass,
                 expectedRepClass,
                 isPreapproved,
                 isError,
                 errorReason: errorReason || 'Correct',
                 status,
-                statusCategory: ro ? oscErsStatusCategory(status) : 'Unidentified',
+                statusCategory: oscErsStatusCategory(status),
                 reportable,
-                unitNo: (ro && ro.unitNo) || '',
-                ersUnitNo: ersRow.unitNo || '',
-                openedFormatted: (ro && ro.openedFormatted) || '',
-                ersCreatedAt: oscErsFormatDate(ersRow.createdAtRaw),
-                matchStatus,
-                matchConfidence: ro ? match.score : 0,
-                sourceRowNumber: ersRow.sourceRowNumber
+                unitNo: (ro && ro.unitNo) || String(getRawCell(rowValues, 3) || getCol(vro, ['Unit No', 'UNITNUMBER', 'Vehicle']) || '').trim(),
+                openedFormatted: (ro && ro.openedFormatted) || String(getRawCell(rowValues, 8) || getCol(vro, ['Opened', 'ROOpenedDate']) || '').trim()
             });
         });
-
         window.globalErsReportingRows = rows;
         try { renderErsReportingCoordinatorFilter(); } catch(e) {}
         return rows;
@@ -10349,15 +10312,15 @@
         const coordinatorCount = new Set(filteredRows.map(r => r.coordinator)).size;
         if (summary) {
             summary.innerHTML = `
-                <div class="ers-reporting-summary-card"><div class="summary-label">ERS Classification Score</div><div class="summary-value">${score}%</div><div class="summary-sub">Correct ERS REPCLASS / True ERS FORM events</div></div>
-                <div class="ers-reporting-summary-card"><div class="summary-label">True ERS Events</div><div class="summary-value">${total}</div><div class="summary-sub">Matched from ERS.xlsx, excluding Closed / Final Charges / Canceled when master status is found</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">ERS Classification Score</div><div class="summary-value">${score}%</div><div class="summary-sub">Correct ERS REPCLASS / Total ERS VROs</div></div>
+                <div class="ers-reporting-summary-card"><div class="summary-label">Total ERS VROs</div><div class="summary-value">${total}</div><div class="summary-sub">Open or Completed, excluding Closed / Final Charges / Canceled</div></div>
                 <div class="ers-reporting-summary-card"><div class="summary-label">Correct</div><div class="summary-value">${correct}</div><div class="summary-sub">Preapproved and customer-matched</div></div>
                 <div class="ers-reporting-summary-card"><div class="summary-label">Errors / Mismatches</div><div class="summary-value">${errors}</div><div class="summary-sub">Needs ERS REPCLASS correction</div></div>
-                <div class="ers-reporting-summary-card"><div class="summary-label">Coordinators</div><div class="summary-value">${coordinatorCount}</div><div class="summary-sub">Active ERS team from Resource Table</div></div>`;
+                <div class="ers-reporting-summary-card"><div class="summary-label">Coordinators</div><div class="summary-value">${coordinatorCount}</div><div class="summary-sub">Active ERS creators from Resource Table</div></div>`;
         }
         const groups = getErsCoordinatorGroups();
         if (!groups.length) {
-            body.innerHTML = '<tr><td colspan="6"><div class="ers-reporting-message">No true ERS FORM events found for active ERS coordinators from ERS.xlsx for this filter.</div></td></tr>';
+            body.innerHTML = '<tr><td colspan="6"><div class="ers-reporting-message">No VRO Export ERS-created VROs found for this filter.</div></td></tr>';
             return;
         }
         let html = '';
@@ -10375,29 +10338,26 @@
                 <td>${actionText}</td>
             </tr>`;
             if (expanded) {
-                const detailRows = g.errorRows.filter(r => r && r.isError && r.reportable && oscErsIsReportableStatus(r.status || '')).slice().sort((a,b) => (a.customerName || '').localeCompare(b.customerName || '') || (a.roNum || '').localeCompare(b.roNum || ''));
+                const detailRows = g.errorRows.filter(r => r && r.isError).slice().sort((a,b) => (a.customerName || '').localeCompare(b.customerName || '') || (a.roNum || '').localeCompare(b.roNum || ''));
                 let detailHtml = '';
                 if (!detailRows.length) {
-                    detailHtml = '<tr><td colspan="10" style="text-align:center;color:#64748b;font-weight:800;">No error-state VROs for this coordinator.</td></tr>';
+                    detailHtml = '<tr><td colspan="7" style="text-align:center;color:#64748b;font-weight:800;">No error-state VROs for this coordinator.</td></tr>';
                 } else {
                     detailRows.forEach(r => {
                         detailHtml += `<tr>
                             <td>${escapeHtml(r.customerName || '')}</td>
-                            <td>${r.roUrl ? `<a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum || '')}</a>` : escapeHtml(r.roNum || '')}</td>
-                            <td>${escapeHtml(r.ersRawVro || '')}</td>
+                            <td><a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum || '')}</a></td>
                             <td>${escapeHtml(r.currentRepClass || '')}</td>
                             <td>${escapeHtml(r.expectedRepClass || 'Preapproved ERS REPCLASS')}</td>
                             <td>${escapeHtml(r.statusCategory || '')}</td>
                             <td>${escapeHtml(r.status || '')}</td>
-                            <td>${escapeHtml(r.ersCreatedAt || '')}</td>
-                            <td>${escapeHtml(r.matchStatus || '')}</td>
                             <td><span class="ers-error-pill">${escapeHtml(r.errorReason || '')}</span></td>
                         </tr>`;
                     });
                 }
                 html += `<tr><td colspan="6" class="ers-detail-cell"><div class="ers-detail-wrap">
                     <table class="ers-detail-table">
-                        <thead><tr><th>Customer Name</th><th>Master VRO</th><th>ERS VRO Entry</th><th>Current REPCLASS</th><th>Expected REPCLASS</th><th>Open / Completed</th><th>Status</th><th>ERS Created</th><th>Match Audit</th><th>Error / Mismatch</th></tr></thead>
+                        <thead><tr><th>Customer Name</th><th>VRO Number</th><th>Current REPCLASS</th><th>Expected REPCLASS</th><th>Open / Completed</th><th>Status</th><th>Error / Mismatch</th></tr></thead>
                         <tbody>${detailHtml}</tbody>
                     </table>
                 </div></td></tr>`;
@@ -10419,49 +10379,39 @@
 
         const aoa = [[
             'Coordinator',
+            'Coordinator Email',
             'Customer Name',
-            'Master VRO Number',
-            'ERS VRO Entry',
+            'VRO Number',
             'Current REPCLASS',
             'Expected REPCLASS',
             'Correction Needed',
             'Open / Completed',
             'Status',
-            'Master Unit No',
-            'ERS Unit Entry',
-            'Master Opened Date',
-            'ERS Created At',
-            'Match Audit',
-            'Match Confidence',
-            'ERS.xlsx Row'
+            'Unit No',
+            'Opened Date'
         ]];
 
         rows.forEach(r => {
             aoa.push([
                 r.coordinator || '',
+                r.coordinatorEmail || '',
                 r.customerName || '',
                 r.roNum || '',
-                r.ersRawVro || '',
                 r.currentRepClass || '',
                 r.expectedRepClass || 'Preapproved ERS REPCLASS',
                 r.errorReason || 'Mismatch / error',
                 r.statusCategory || '',
                 r.status || '',
                 r.unitNo || '',
-                r.ersUnitNo || '',
-                r.openedFormatted || '',
-                r.ersCreatedAt || '',
-                r.matchStatus || '',
-                r.matchConfidence || '',
-                r.sourceRowNumber || ''
+                r.openedFormatted || ''
             ]);
         });
 
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         ws['!cols'] = [
-            {wch:24},{wch:24},{wch:18},{wch:18},{wch:22},{wch:24},{wch:42},{wch:16},{wch:26},{wch:18},{wch:18},{wch:18},{wch:18},{wch:52},{wch:14},{wch:12}
+            {wch:24},{wch:30},{wch:24},{wch:18},{wch:22},{wch:24},{wch:38},{wch:16},{wch:26},{wch:18},{wch:18}
         ];
-        ws['!autofilter'] = { ref: `A1:P${Math.max(aoa.length, 1)}` };
+        ws['!autofilter'] = { ref: `A1:K${Math.max(aoa.length, 1)}` };
 
         const headerStyle = {
             font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -10498,7 +10448,7 @@
                 ws[addr].s = bodyStyle;
             }
             const sourceRow = rows[r - 1];
-            const vroCell = XLSX.utils.encode_cell({ r, c: 2 });
+            const vroCell = XLSX.utils.encode_cell({ r, c: 3 });
             if (ws[vroCell] && sourceRow && sourceRow.roUrl) {
                 ws[vroCell].l = { Target: sourceRow.roUrl, Tooltip: 'Open VRO in AFS Hub' };
                 ws[vroCell].s = linkStyle;
@@ -11075,4 +11025,4 @@
 </script>
 
 </body>
-</html>
+</html
