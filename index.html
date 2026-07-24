@@ -56,8 +56,9 @@
 
         .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
         .top-bar { background: #fff; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; flex-shrink: 0; position: relative; min-height: 86px; }
-        .top-logo-container { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 420px; }
-        .top-logo { display: block; max-height: 68px; max-width: 400px; width: auto; height: auto; object-fit: contain; }
+        .top-logo-container { position: absolute; left: 45%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 260px; }
+        .top-logo { display: block; max-height: 52px; max-width: 245px; width: auto; height: auto; object-fit: contain; }
+        @media (max-width: 1650px) { .top-logo-container { display:none; } }
         .search-container input { padding: 10px 15px; width: 300px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
         .top-actions { display: flex; gap: 15px; align-items: center; }
         .btn-action { background-color: var(--gold); color: #333; padding: 10px 20px; border-radius: 4px; font-weight: bold; transition: 0.2s; border: none; cursor: pointer; font-size: 13px;}
@@ -191,11 +192,13 @@
         .home-portal-note { margin-top:12px; color:#64748b; font-size:12px; font-weight:750; line-height:1.4; max-width:980px; }
         @media (max-width: 900px) { .home-portal-grid { grid-template-columns:1fr; } }
 
-        .queue-drilldown-table { min-width:1320px; table-layout:fixed; }
-        .ro-action-line { display:flex; align-items:center; gap:10px; width:100%; min-width:0; flex-wrap:nowrap; }
-        .ro-action-line > div:first-child { flex:0 0 auto; min-width:max-content; }
-        .ro-action-link { flex:1 1 auto; min-width:82px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .ro-action-icons { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:flex-end; gap:10px; white-space:nowrap; min-width:58px; }
+        .queue-drilldown-table { min-width:1520px; table-layout:fixed; }
+        .queue-drilldown-table th, .queue-drilldown-table td { text-align:left; }
+        .queue-drilldown-table th:nth-child(8), .queue-drilldown-table td:nth-child(8) { text-align:center; }
+        .ro-action-line { display:grid; grid-template-columns:minmax(88px,max-content) minmax(112px,1fr) minmax(128px,max-content); align-items:center; gap:12px; width:100%; min-width:0; }
+        .ro-action-line > div:first-child { min-width:max-content; }
+        .ro-action-link { min-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .ro-action-icons { justify-self:end; display:inline-flex; align-items:center; justify-content:flex-end; gap:11px; white-space:nowrap; min-width:128px; }
         .ro-action-icons .customer-aid-btn, .ro-action-icons .note-btn { margin-left:0; flex:0 0 auto; }
         .ro-action-icons .queue-source-pill, .ro-action-icons .lock-warning-tooltip { flex:0 0 auto; }
         .repclass-only-badge { max-width:none; min-width:max-content; }
@@ -250,7 +253,7 @@
         .ecd-green { color: #5cb85c; font-weight: 800; }
         .badge-ecd-missing { background-color: #fff3cd; color: #d9534f; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; border: 1px solid #d9534f; white-space: nowrap; display: inline-block; }
 
-        .ecd-review-cell { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+        .ecd-review-cell { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-width:110px; text-align:center; }
         .ecd-review-btn { min-width:78px; padding:4px 8px; border-radius:999px; border:1px solid #c9302c; background:var(--urgent-red); color:#fff; font-size:9px; font-weight:900; text-transform:uppercase; cursor:pointer; line-height:1.1; box-shadow:0 1px 3px rgba(0,0,0,0.18); }
         .ecd-review-btn:hover { opacity:.9; transform:translateY(-1px); }
         .ecd-review-btn.updated { background:#16a34a; border-color:#15803d; cursor:default; }
@@ -258,8 +261,30 @@
         .ecd-review-btn.stale { background:#f97316; border-color:#ea580c; }
         .ecd-review-hint { font-size:9px; font-weight:800; color:#64748b; line-height:1.15; text-transform:uppercase; }
         .repclass-only-badge { display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:999px; font-size:9px; font-weight:900; text-transform:uppercase; color:#475569; background:#e2e8f0; border:1px solid #cbd5e1; white-space:nowrap; }
+
+        .dwell-status-wrap { display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-width:178px; }
+        .dwell-status-text { font-size:11px; line-height:1.35; color:#334155; font-weight:800; word-break:normal; overflow-wrap:break-word; }
+        .dwell-badge { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:3px 7px; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.25px; line-height:1.1; white-space:nowrap; }
+        .dwell-badge.ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+        .dwell-badge.warn { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+        .dwell-badge.reasoned { background:#e0f2fe; color:#075985; border:1px solid #7dd3fc; }
+        .dwell-reason-select { width:168px; max-width:100%; border:1px solid #fca5a5; background:#fff; color:#7f1d1d; border-radius:6px; padding:5px 7px; font-size:10px; font-weight:900; line-height:1.15; }
+        .dwell-reason-select.saved { border-color:#86efac; color:#166534; background:#f0fdf4; }
+        .performance-reporting-summary-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px; margin:14px 0; }
+        .performance-kpi-card { background:#fff; border:1px solid #e2e8f0; border-top:4px solid var(--gold); border-radius:8px; padding:14px; box-shadow:0 1px 3px rgba(15,23,42,.08); }
+        .performance-kpi-card .label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:.4px; }
+        .performance-kpi-card .value { font-size:24px; font-weight:900; color:#334155; margin-top:4px; }
+        .performance-reporting-toolbar { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .performance-reporting-field { display:flex; flex-direction:column; gap:4px; }
+        .performance-reporting-field label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:.4px; }
+        .performance-reporting-field select { padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px; font-weight:800; background:#fff; min-width:180px; }
+        .performance-reporting-table th { background:#1f4e78; color:#fff; }
+        .performance-reporting-table td { font-size:12px; vertical-align:middle; }
+        .performance-overdue { color:#991b1b; font-weight:900; }
+        .performance-ok { color:#166534; font-weight:900; }
+
         
-        .status-toggle { cursor: pointer; margin-right: 8px; user-select: none; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); display: inline-block; text-align: center; min-width: 85px; font-size: 10px; letter-spacing: 0.5px;}
+        .status-toggle { cursor: pointer; margin-right: 0; user-select: none; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); display: inline-block; text-align: center; min-width: 85px; font-size: 10px; letter-spacing: 0.5px;}
         .status-toggle:hover { opacity: 0.8; transform: translateY(-1px); }
         .status-pending { background-color: var(--urgent-red); color: white; border: 1px solid #c9302c; }
         .status-dispatched { background-color: var(--low-green); color: white; border: 1px solid #4cae4c; }
@@ -542,6 +567,7 @@
         <div class="submenu" id="garda-submenu">
             <div class="menu-item" id="menu-summary" onclick="navigate('summary-view', this)">Consolidation Summary</div>
             <div class="menu-item" id="menu-compliance-reporting" onclick="navigate('compliance-reporting-view', this)">Compliance Reporting</div>
+            <div class="menu-item" id="menu-performance-reporting" onclick="navigate('performance-reporting-view', this); renderPerformanceReporting();">Performance Reporting</div>
             <div class="menu-item" id="menu-ers-reporting" onclick="navigate('ers-reporting-view', this); renderErsReporting();">ERS Reporting</div>
         </div>
         
@@ -787,6 +813,54 @@
             </div>
         </div>
 
+
+        <div id="performance-reporting-view" class="view-section">
+            <div class="view-title">
+                <span style="font-weight: 700;">Performance Reporting</span>
+                <div class="controls-group" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-green" onclick="exportPerformanceReportingToExcel()">&#11139; Export Performance</button>
+                </div>
+            </div>
+            <div class="drilldown-container">
+                <div class="performance-reporting-toolbar">
+                    <div class="performance-reporting-field">
+                        <label for="performance-status-filter">Status</label>
+                        <select id="performance-status-filter" onchange="renderPerformanceReporting()">
+                            <option value="ALL">All Dwell Statuses</option>
+                            <option value="OVERDUE">Over Threshold</option>
+                            <option value="MISSING_REASON">Missing Reason</option>
+                            <option value="HAS_REASON">Reason Captured</option>
+                        </select>
+                    </div>
+                    <div class="performance-reporting-field">
+                        <label for="performance-queue-filter">Queue</label>
+                        <select id="performance-queue-filter" multiple size="4" onchange="renderPerformanceReporting()" title="Use Ctrl/Cmd-click to select multiple queues. Leave blank or select All Queues for all queues.">
+                            <option value="ALL" selected>All Queues</option>
+                            <option value="PM">PM</option>
+                            <option value="VR">Vended Repair</option>
+                            <option value="ERS">ERS</option>
+                        </select>
+                    </div>
+                    <button class="btn-action" onclick="renderPerformanceReporting()">Refresh Report</button>
+                </div>
+                <div id="performance-reporting-summary" class="performance-reporting-summary-grid"></div>
+                <div class="table-wrapper">
+                    <table id="performance-reporting-table" class="performance-reporting-table">
+                        <colgroup>
+                            <col style="width:11%;"><col style="width:8%;"><col style="width:14%;"><col style="width:9%;"><col style="width:10%;"><col style="width:12%;"><col style="width:10%;"><col style="width:8%;"><col style="width:8%;"><col style="width:10%;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Coordinator</th><th>Queue</th><th>Customer / Location</th><th>Unit</th><th>VRO</th><th>Status Bucket</th><th>Status Started</th><th>Dwell Age</th><th>Limit</th><th>Reason / Compliance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performance-reporting-body">
+                            <tr><td colspan="10"><div class="compliance-reporting-message">Performance Reporting will load after OSC+ data is processed.</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <div id="ers-reporting-view" class="view-section">
             <div class="view-title">
@@ -1531,6 +1605,8 @@
         let globalWorkflowActivityState = {};
         let globalRepairClassReviewState = {};
         let globalEcdReviewState = {};
+        var globalDwellTrackingState = {};
+        var globalDwellReasonState = {};
         let suppressWorkflowActivityRefreshUntil = 0;
         let suppressEcdReviewRefreshUntil = 0;
         let currentWorkbookFingerprint = 'initial';
@@ -1553,6 +1629,8 @@
             globalWorkflowActivityState = JSON.parse(localStorage.getItem('workflow_activity') || '{}');
             globalRepairClassReviewState = JSON.parse(localStorage.getItem('repclass_review_status') || '{}');
             globalEcdReviewState = JSON.parse(localStorage.getItem('ecd_review_status') || '{}');
+            globalDwellTrackingState = JSON.parse(localStorage.getItem('dwell_tracking') || '{}');
+            globalDwellReasonState = JSON.parse(localStorage.getItem('dwell_reasons') || '{}');
             globalUnlimitedSpendState = JSON.parse(localStorage.getItem('unlimited_spend_mode') || '{}');
             globalManualGovernorLockState = JSON.parse(localStorage.getItem('manual_governor_lock') || '{}');
         } catch(e) {}
@@ -1913,6 +1991,241 @@
         }
 
 
+
+        const DWELL_REASON_OPTIONS_BY_QUEUE_STATUS = {
+            PM: {
+                UNASSIGNED: ['Action Required', 'Vehicle Unavailable'],
+                PENDING_ESTIMATE: ['Action Required', 'Vehicle Unavailable', 'Waiting on Vendor Estimate'],
+                ESTIMATE: ['Waiting on Customer Approval'],
+                WIP: ['Action Required', 'Vehicle Unavailable', 'Waiting on Vendor Estimate', 'Repair in Progress', 'Parts backordered', 'Waiting on Customer Approval'],
+                COMPLETE: ['Action Required', 'Waiting on Invoice']
+            },
+            VR: {
+                UNASSIGNED: ['Action Required', 'Vehicle Unavailable'],
+                PENDING_ESTIMATE: ['Action Required', 'Vehicle Unavailable', 'Waiting on Vendor Estimate'],
+                ESTIMATE: ['Waiting on Customer Approval'],
+                WIP: ['Action Required', 'Vehicle Unavailable', 'Waiting on Vendor Estimate', 'Repair in Progress', 'Parts backordered', 'Waiting on Customer Approval'],
+                COMPLETE: ['Action Required', 'Waiting on Invoice']
+            },
+            ERS: {
+                UNASSIGNED: ['Action Required'],
+                PENDING_ESTIMATE: ['Action Required'],
+                WIP: ['Action Required'],
+                COMPLETE: ['Action Required', 'Waiting on Invoice']
+            }
+        };
+
+        function getDwellReasonOptions(ro) {
+            const queue = dwellQueueType(ro);
+            const bucket = dwellNormalizeStatusBucket(ro && ro.status);
+            const byQueue = DWELL_REASON_OPTIONS_BY_QUEUE_STATUS[queue] || DWELL_REASON_OPTIONS_BY_QUEUE_STATUS.VR;
+            return (byQueue && byQueue[bucket]) ? byQueue[bucket].slice() : [];
+        }
+
+        function dwellNormalizeStatusBucket(status) {
+            const s = String(status || '').toUpperCase().trim();
+            if (!s || s.includes('NO ACTIVE RO') || s.includes('NO RO')) return 'NO_ACTIVE_RO';
+            if (s.includes('FINAL CHARGES') || s.includes('BILLED') || s.includes('INVOICED') || s.includes('CANCEL') || s.includes('VOID')) return 'FINAL_CHARGES';
+            if (s.includes('UNASSIGNED')) return 'UNASSIGNED';
+            if (s.includes('PENDING') && s.includes('ESTIMATE')) return 'PENDING_ESTIMATE';
+            if (s.includes('ESTIMATE')) return 'ESTIMATE';
+            if (s.includes('WORK IN PROGRESS') || s.includes('WORK IN PROCESS') || s === 'WIP') return 'WIP';
+            if (s.includes('COMPLETED') || s.includes('CLOSED') || s.includes('COMPLETE')) return 'COMPLETE';
+            return 'OTHER';
+        }
+
+        function dwellStatusLabel(bucket) {
+            const map = {
+                UNASSIGNED: 'Unassigned',
+                PENDING_ESTIMATE: 'Pending Estimate',
+                ESTIMATE: 'Estimate',
+                WIP: 'WIP',
+                COMPLETE: 'Complete',
+                FINAL_CHARGES: 'Final Charges Submitted',
+                NO_ACTIVE_RO: 'No Active RO',
+                OTHER: 'Other'
+            };
+            return map[bucket] || bucket || 'Other';
+        }
+
+        function dwellQueueType(ro) {
+            const q = String((ro && (ro.repClassQueueAssignment || ro.sourceQueue || ro.createdByTeam || ro.createdByTeamOverride)) || '').toUpperCase();
+            if (q.includes('ERS')) return 'ERS';
+            if (q.includes('PM')) return 'PM';
+            return 'VR';
+        }
+
+        function dwellQueueLabel(queue) {
+            return queue === 'PM' ? 'PM' : (queue === 'ERS' ? 'ERS' : 'VR');
+        }
+
+        function dwellThresholdHours(ro) {
+            const queue = dwellQueueType(ro);
+            const bucket = dwellNormalizeStatusBucket(ro && ro.status);
+            if (bucket === 'FINAL_CHARGES' || bucket === 'NO_ACTIVE_RO' || bucket === 'OTHER') return null;
+            if (queue === 'PM') {
+                if (bucket === 'UNASSIGNED') return 5 * 24;
+                if (bucket === 'PENDING_ESTIMATE') return 72;
+                if (bucket === 'ESTIMATE') return 24;
+                if (bucket === 'WIP') return 24;
+                if (bucket === 'COMPLETE') return 14 * 24;
+            }
+            if (queue === 'ERS') {
+                if (bucket === 'UNASSIGNED') return 1.5;
+                if (bucket === 'PENDING_ESTIMATE') return 1.5;
+                if (bucket === 'ESTIMATE') return null;
+                if (bucket === 'WIP') return 1.5;
+                if (bucket === 'COMPLETE') return 14 * 24;
+            }
+            // VR / Vended Repair
+            if (bucket === 'UNASSIGNED') return 4;
+            if (bucket === 'PENDING_ESTIMATE') return 72;
+            if (bucket === 'ESTIMATE') return 24;
+            if (bucket === 'WIP') return 48;
+            if (bucket === 'COMPLETE') return 14 * 24;
+            return null;
+        }
+
+        function dwellThresholdLabel(ro) {
+            const queue = dwellQueueType(ro);
+            const bucket = dwellNormalizeStatusBucket(ro && ro.status);
+            if (bucket === 'FINAL_CHARGES') return 'No dwell time';
+            const h = dwellThresholdHours(ro);
+            if (h === null || h === undefined) return queue === 'ERS' ? 'N/A' : 'N/A';
+            if (h < 2) return '90 min';
+            if (h % 24 === 0) return `${h / 24} day${h / 24 === 1 ? '' : 's'}`;
+            return `${h} hours`;
+        }
+
+        function getDwellTrackRecord(safeRo) {
+            return (globalDwellTrackingState && globalDwellTrackingState[safeRo]) ? globalDwellTrackingState[safeRo] : null;
+        }
+
+        function getDwellReasonRecord(ro) {
+            if (!ro || !ro.roNum) return null;
+            const safeRo = safeFirebaseKey(ro.roNum);
+            const bucket = dwellNormalizeStatusBucket(ro.status);
+            const byRo = (globalDwellReasonState && globalDwellReasonState[safeRo]) ? globalDwellReasonState[safeRo] : null;
+            if (!byRo) return null;
+            const rec = byRo[bucket] || byRo.current || null;
+            const track = getDwellTrackRecord(safeRo);
+            if (rec && track && rec.statusStartedAt && track.statusStartedAt && String(rec.statusStartedAt) !== String(track.statusStartedAt)) return null;
+            return rec;
+        }
+
+        function getDwellAgeMs(ro) {
+            if (!ro || !ro.roNum) return 0;
+            const safeRo = safeFirebaseKey(ro.roNum);
+            const track = getDwellTrackRecord(safeRo);
+            const start = track && track.statusStartedAt ? new Date(track.statusStartedAt) : null;
+            if (!start || isNaN(start.getTime())) return 0;
+            return Math.max(0, Date.now() - start.getTime());
+        }
+
+        function formatDwellDuration(ms) {
+            const totalMinutes = Math.max(0, Math.floor((Number(ms) || 0) / 60000));
+            const days = Math.floor(totalMinutes / 1440);
+            const hours = Math.floor((totalMinutes % 1440) / 60);
+            const minutes = totalMinutes % 60;
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        function isDwellExceeded(ro) {
+            if (!ro || !ro.isOpen || !ro.roNum || String(ro.roNum).startsWith('NO RO') || String(ro.roNum).startsWith('SEE_OTHER:')) return false;
+            const thresholdHours = dwellThresholdHours(ro);
+            if (thresholdHours === null || thresholdHours === undefined) return false;
+            const ageMs = getDwellAgeMs(ro);
+            const thresholdMs = Math.max(0, Number(thresholdHours) * 60 * 60 * 1000);
+            return ageMs >= thresholdMs;
+        }
+
+        function isDwellReasonRequired(ro) {
+            return !!(isDwellExceeded(ro) && !getDwellReasonRecord(ro));
+        }
+
+        function getDwellStatusCellHtml(ro, statusHtml) {
+            if (!ro || !ro.roNum || String(ro.roNum).startsWith('NO RO') || String(ro.roNum).startsWith('SEE_OTHER:')) return `<b>Status:</b> ${statusHtml}`;
+            const bucket = dwellNormalizeStatusBucket(ro.status);
+            const limit = dwellThresholdLabel(ro);
+            const exceeded = isDwellExceeded(ro);
+            const reasonRec = getDwellReasonRecord(ro);
+            const age = formatDwellDuration(getDwellAgeMs(ro));
+            const safeRo = safeFirebaseKey(ro.roNum);
+            let reasonHtml = '';
+            if (exceeded) {
+                const currentReason = reasonRec && reasonRec.reason ? String(reasonRec.reason) : '';
+                const reasonOptions = getDwellReasonOptions(ro);
+                const effectiveCurrent = reasonOptions.includes(currentReason) ? currentReason : '';
+                const opts = [''].concat(reasonOptions).map(opt => {
+                    const label = opt || 'Select exceeded reason';
+                    return `<option value="${escapeHtml(opt)}"${opt === effectiveCurrent ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+                }).join('');
+                if (reasonOptions.length) {
+                    reasonHtml = `<select class="dwell-reason-select${effectiveCurrent ? ' saved' : ''}" data-dwell-ro="${escapeHtml(safeRo)}" onchange="event.preventDefault(); event.stopPropagation(); saveDwellReason('${safeRo}', this.value)">${opts}</select>`;
+                }
+            }
+            const badge = exceeded
+                ? (reasonRec ? `<span class="dwell-badge reasoned">Reason captured</span>` : `<span class="dwell-badge warn">Dwell reason required</span>`)
+                : `<span class="dwell-badge ok">Dwell OK</span>`;
+            return `<div class="dwell-status-wrap"><div class="dwell-status-text"><b>Status:</b> ${statusHtml}</div><div style="font-size:10px;color:#64748b;font-weight:900;line-height:1.2;">${escapeHtml(dwellStatusLabel(bucket))} · ${escapeHtml(age)} / ${escapeHtml(limit)}</div>${badge}${reasonHtml}</div>`;
+        }
+
+        async function saveDwellReason(safeRo, reason) {
+            const ro = getRoContextBySafeRo(safeRo);
+            if (!ro || !reason) return;
+            rememberWorkflowScrollPosition();
+            const bucket = dwellNormalizeStatusBucket(ro.status);
+            const track = getDwellTrackRecord(safeRo) || {};
+            const payload = {
+                roNumber: ro.roNum || safeRo,
+                unitNo: ro.unitNo || '',
+                owner: ro.owner || '',
+                sourceQueue: dwellQueueType(ro),
+                statusBucket: bucket,
+                statusText: ro.status || '',
+                statusStartedAt: track.statusStartedAt || '',
+                reason: reason,
+                selectedAt: new Date().toISOString(),
+                selectedDate: getLocalDateKey(new Date()),
+                workbookFingerprint: currentWorkbookFingerprint || ''
+            };
+            if (!globalDwellReasonState[safeRo]) globalDwellReasonState[safeRo] = {};
+            globalDwellReasonState[safeRo][bucket] = payload;
+            globalDwellReasonState[safeRo].current = payload;
+            try { localStorage.setItem('dwell_reasons', JSON.stringify(globalDwellReasonState)); } catch(e) {}
+            if (db) {
+                const updates = {};
+                updates[`dwellReasons/${safeRo}/${bucket}`] = payload;
+                updates[`dwellReasons/${safeRo}/current`] = payload;
+                updates[`workflowActivity/${safeRo}/lastTouchedAt`] = payload.selectedAt;
+                updates[`workflowActivity/${safeRo}/lastTouchedDate`] = payload.selectedDate;
+                updates[`workflowActivity/${safeRo}/lastActionType`] = 'DWELL_REASON_SELECTED';
+                updates[`workflowActivity/${safeRo}/latestDwellReason`] = payload;
+                await db.ref().update(updates).catch(err => {
+                    console.error('Failed to save dwell reason:', err);
+                    alert('Dwell reason did not save to Firebase. Please try again.');
+                });
+                logWorkflowActivity(safeRo, 'DWELL_REASON_SELECTED', `Dwell reason selected: ${reason}`, payload).catch(err => console.warn('Dwell reason activity log failed:', err));
+            }
+            updateAllDwellReasonControls();
+            if (typeof renderPerformanceReporting === 'function') renderPerformanceReporting();
+            scheduleComplianceDailySnapshotLog();
+            restoreWorkflowScrollPositionSoon();
+        }
+
+        function updateAllDwellReasonControls() {
+            document.querySelectorAll('[data-dwell-ro]').forEach(sel => {
+                const safeRo = sel.getAttribute('data-dwell-ro');
+                const ro = getRoContextBySafeRo(safeRo);
+                if (!ro) return;
+                const rec = getDwellReasonRecord(ro);
+                sel.classList.toggle('saved', !!(rec && rec.reason));
+                if (rec && rec.reason) sel.value = rec.reason;
+            });
+        }
+
         function getEcdReviewRecord(safeRo) {
             return (globalEcdReviewState && globalEcdReviewState[safeRo]) ? globalEcdReviewState[safeRo] : null;
         }
@@ -2082,7 +2395,7 @@
 
             const total = activeRos.length;
             if (total === 0) {
-                return { score: 100, rating: 'ON TRACK', colorClass: 'compliance-green', total: 0, touched: 0, notes: 0, dispatched: 0, dispatchTotal: 0, stale: 0, ecdUpdated: 0, ecdTotal: 0, ecdPending: 0, touchPct: 100, notesPct: 100, dispatchPct: 100, staleCleanPct: 100, ecdPct: 100, dateKey, lockActive, lockedExcluded, realOpenTotal: realOpenRos.length };
+                return { score: 100, rating: 'ON TRACK', colorClass: 'compliance-green', total: 0, touched: 0, notes: 0, dispatched: 0, dispatchTotal: 0, stale: 0, ecdUpdated: 0, ecdTotal: 0, ecdPending: 0, dwellCompleted: 0, dwellTotal: 0, dwellPending: 0, touchPct: 100, notesPct: 100, dispatchPct: 100, staleCleanPct: 100, ecdPct: 100, dwellPct: 100, dateKey, lockActive, lockedExcluded, realOpenTotal: realOpenRos.length };
             }
 
             let touched = 0;
@@ -2093,6 +2406,9 @@
             let ecdUpdated = 0;
             let ecdTotal = 0;
             let ecdPending = 0;
+            let dwellCompleted = 0;
+            let dwellTotal = 0;
+            let dwellPending = 0;
 
             activeRos.forEach(ro => {
                 const safeRo = safeFirebaseKey(ro.roNum);
@@ -2110,6 +2426,12 @@
                     if (isEcdMarkedUpdatedForCurrentWorkbook(ro)) ecdUpdated++;
                     else ecdPending++;
                 }
+
+                if (isDwellExceeded(ro)) {
+                    dwellTotal++;
+                    if (getDwellReasonRecord(ro)) dwellCompleted++;
+                    else dwellPending++;
+                }
             });
 
             const touchPct = total ? touched / total : 1;
@@ -2117,11 +2439,13 @@
             const dispatchPct = dispatchTotal ? dispatched / dispatchTotal : 1;
             const staleCleanPct = total ? (total - stale) / total : 1;
             const ecdPctRaw = ecdTotal ? ecdUpdated / ecdTotal : 1;
-            const score = Math.round((touchPct * 35) + (notesPct * 25) + (dispatchPct * 20) + (staleCleanPct * 10) + (ecdPctRaw * 10));
+            const dwellPctRaw = dwellTotal ? dwellCompleted / dwellTotal : 1;
+            // Dwell reason compliance is part of daily workflow compliance. Stale weight is reduced so the total remains 100.
+            const score = Math.round((touchPct * 30) + (notesPct * 25) + (dispatchPct * 20) + (ecdPctRaw * 10) + (dwellPctRaw * 10) + (staleCleanPct * 5));
             const colorClass = score >= 85 ? 'compliance-green' : (score >= 70 ? 'compliance-yellow' : 'compliance-red');
             const rating = score >= 85 ? 'ON TRACK' : (score >= 70 ? 'WATCH' : 'NEEDS ACTION');
 
-            return { score, rating, colorClass, total, touched, notes, dispatched, dispatchTotal, stale, ecdUpdated, ecdTotal, ecdPending, touchPct: Math.round(touchPct * 100), notesPct: Math.round(notesPct * 100), dispatchPct: Math.round(dispatchPct * 100), staleCleanPct: Math.round(staleCleanPct * 100), ecdPct: Math.round(ecdPctRaw * 100), dateKey, lockActive, lockedExcluded, realOpenTotal: realOpenRos.length };
+            return { score, rating, colorClass, total, touched, notes, dispatched, dispatchTotal, stale, ecdUpdated, ecdTotal, ecdPending, dwellCompleted, dwellTotal, dwellPending, touchPct: Math.round(touchPct * 100), notesPct: Math.round(notesPct * 100), dispatchPct: Math.round(dispatchPct * 100), staleCleanPct: Math.round(staleCleanPct * 100), ecdPct: Math.round(ecdPctRaw * 100), dwellPct: Math.round(dwellPctRaw * 100), dateKey, lockActive, lockedExcluded, realOpenTotal: realOpenRos.length };
         }
 
         function generateWorkflowComplianceHtml(dataSet, compact = false, ownerKey = '', parentViewId = '') {
@@ -2147,6 +2471,7 @@
                         ${workflowSquare(owner, parent, 'notes', 'Notes', `${c.notes}/${c.total}`, c.total === 0)}
                         ${workflowSquare(owner, parent, 'dispatch', 'Dispatch', `${c.dispatched}/${c.dispatchTotal}`, c.dispatchTotal === 0)}
                         ${workflowSquare(owner, parent, 'ecd', 'ECD', `${c.ecdUpdated}/${c.ecdTotal}`, c.ecdTotal === 0)}
+                        ${workflowSquare(owner, parent, 'dwell', 'Dwell', `${c.dwellCompleted}/${c.dwellTotal}`, c.dwellTotal === 0)}
                         ${workflowSquare(owner, parent, 'stale', 'Stale', `${c.stale}`, c.stale === 0)}
                     </div>
                     ${lockNote}
@@ -3454,7 +3779,7 @@
         }
 
         document.addEventListener('pointerdown', function(e) {
-            const actionTarget = e.target && e.target.closest ? e.target.closest('.ecd-review-btn, .status-toggle, .repair-class-toggle, .note-btn, .repclass-note-btn, .workflow-compliance-mini, .highlight-box.clickable, .stat-box.clickable') : null;
+            const actionTarget = e.target && e.target.closest ? e.target.closest('.ecd-review-btn, .dwell-reason-select, .status-toggle, .repair-class-toggle, .note-btn, .repclass-note-btn, .workflow-compliance-mini, .highlight-box.clickable, .stat-box.clickable') : null;
             if (actionTarget) rememberWorkflowScrollPosition();
         }, true);
 
@@ -8073,7 +8398,7 @@
                             return (b.isOOS === true ? 1 : 0) - (a.isOOS === true ? 1 : 0);
                         });
 
-                        let tableHTML = `<div class="table-wrapper"><table class="queue-drilldown-table"><colgroup><col style="width:${isPM ? '31%' : '28%'};"><col style="width:${isPM ? '12%' : '11%'};">${isPM ? '' : '<col style="width:9%;">'}<col style="width:8%;"><col style="width:9%;"><col style="width:${isPM ? '17%' : '14%'};"><col style="width:${isPM ? '14%' : '12%'};"><col style="width:${isPM ? '9%' : '9%'};"></colgroup><thead><tr><th>AFS RO # & Dispatch</th><th>Unit No</th>${isPM ? '' : '<th>Priority Status</th>'}<th>OOS Status</th><th>Opened Date</th><th>Status</th><th>Repair Class</th><th>ECD</th></tr></thead><tbody>`;
+                        let tableHTML = `<div class="table-wrapper"><table class="queue-drilldown-table"><colgroup><col style="width:${isPM ? '34%' : '31%'};"><col style="width:${isPM ? '10%' : '10%'};">${isPM ? '' : '<col style="width:8%;">'}<col style="width:8%;"><col style="width:8%;"><col style="width:${isPM ? '18%' : '16%'};"><col style="width:${isPM ? '16%' : '12%'};"><col style="width:${isPM ? '14%' : '13%'};"></colgroup><thead><tr><th>AFS RO # & Dispatch</th><th>Unit No</th>${isPM ? '' : '<th>Priority Status</th>'}<th>OOS Status</th><th>Opened Date</th><th>Status</th><th>Repair Class</th><th>ECD</th></tr></thead><tbody>`;
                         
                         let visibleRowsCount = 0;
                         let lockedCount = 0;
@@ -8125,8 +8450,9 @@
                                 const ecdPending = rowComplianceEligible && isEcdReviewRequired(rowRo) && !isEcdMarkedUpdatedForCurrentWorkbook(rowRo);
                                 const repclassPending = !!(rowRo && (rowRo.isOpen || isRepclassOnlyRow) && hasRepairClassTransfer(rowRo) && !isRepairClassReviewCleared(rowRo));
                                 const repclassCorrected = !!(rowRo && hasRepairClassTransfer(rowRo) && isRepairClassReviewCleared(rowRo));
+                                const dwellPending = rowComplianceEligible && isDwellReasonRequired(rowRo);
 
-                                tableHTML += `<tr class="ro-row${isPreWipLocked ? ' locked-prewip-row' : ''}${isRepclassOnlyRow ? ' repclass-only-row' : ''}" data-safe-ro="${safeRo}" data-open="${rowIsOpen}" data-oos="${u.isOOS}" data-priority="${isPri}" data-touch-pending="${touchedPending}" data-stale-pending="${touchedPending}" data-note-pending="${notePending}" data-dispatch-pending="${dispatchPending}" data-ecd-pending="${ecdPending}" data-repclass-pending="${repclassPending}" data-repclass-corrected="${repclassCorrected}" title="${isPreWipLocked && !isRepclassOnlyRow ? PRE_WIP_LOCK_MESSAGE : ''}">`;
+                                tableHTML += `<tr class="ro-row${isPreWipLocked ? ' locked-prewip-row' : ''}${isRepclassOnlyRow ? ' repclass-only-row' : ''}" data-safe-ro="${safeRo}" data-open="${rowIsOpen}" data-oos="${u.isOOS}" data-priority="${isPri}" data-touch-pending="${touchedPending}" data-stale-pending="${touchedPending}" data-note-pending="${notePending}" data-dispatch-pending="${dispatchPending}" data-ecd-pending="${ecdPending}" data-repclass-pending="${repclassPending}" data-repclass-corrected="${repclassCorrected}" data-dwell-pending="${dwellPending}" title="${isPreWipLocked && !isRepclassOnlyRow ? PRE_WIP_LOCK_MESSAGE : ''}">`;
                                 tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'};">${roHtml}</td>`;
                                 
                                 let safeUnitType = u.unitType || 'UNKNOWN';
@@ -8152,7 +8478,7 @@
                                 }
 
                                 tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'}; font-size:12px; font-weight: 700; color: #555;">${od}</td>`;
-                                tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'}; font-size:11px; line-height:1.4;"><b>Status:</b> ${st}</td>`;
+                                tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'}; font-size:11px; line-height:1.4;">${getDwellStatusCellHtml(rowRo, st)}</td>`;
                                 tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'};">${u.repairClassCells[idx] || ''}</td>`;
                                 tableHTML += `<td style="vertical-align:top; padding-top:15px; border-bottom: ${localIdx === rowCount - 1 ? '1px solid var(--border)' : '1px dashed #eee'};">${ec}</td>`;
                                 tableHTML += `</tr>`;
@@ -8189,6 +8515,7 @@
             if (filterType === 'notes') return row.dataset.notePending === 'true';
             if (filterType === 'dispatch') return row.dataset.dispatchPending === 'true';
             if (filterType === 'ecd') return row.dataset.ecdPending === 'true';
+            if (filterType === 'dwell') return row.dataset.dwellPending === 'true';
             if (filterType === 'roReview' || filterType === 'reviewNeeded' || filterType === 'repairTouched') return row.dataset.repclassPending === 'true';
             if (filterType === 'corrected') return row.dataset.repclassCorrected === 'true';
             return true;
@@ -8515,7 +8842,7 @@
                 }
                 const gardaSubmenu = document.getElementById('garda-submenu');
                 const gardaToggle = document.getElementById('menu-garda');
-                if (['summary-view', 'compliance-reporting-view', 'ers-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
+                if (['summary-view', 'compliance-reporting-view', 'performance-reporting-view', 'ers-reporting-view'].includes(viewId) && gardaSubmenu && gardaToggle) {
                     gardaSubmenu.classList.add('open');
                     gardaToggle.classList.add('expanded');
                     gardaToggle.classList.add('active');
@@ -8527,6 +8854,7 @@
             
             else if (viewId === 'home-view') renderHomeDashboard();
             else if (viewId === 'compliance-reporting-view') loadComplianceReporting();
+            else if (viewId === 'performance-reporting-view') renderPerformanceReporting();
             else if (viewId === 'ers-reporting-view') renderErsReporting();
             else if (viewId === 'summary-view') {
                 renderSummary();
@@ -11104,6 +11432,1648 @@
 
     document.addEventListener('DOMContentLoaded', aidRemoveRetiredUi);
     try { aidRemoveRetiredUi(); } catch(e) {}
+})();
+</script>
+
+
+<script>
+/* === OSC+ Dwell Time + Performance Reporting === */
+(function(){
+    function dwellSafe(value) { return String(value == null ? '' : value); }
+
+    function markPurpleWaveRepclassClean() {
+        (processedData || []).forEach(ro => {
+            const txt = [ro.customer, ro.rawCustomerLocation, ro.branch, ro.subregion, ro.custKey, ro.drillTopLevel].map(v => String(v || '').toUpperCase()).join(' | ');
+            if (txt.includes('PURPLE WAVE')) {
+                ro.purpleWaveNoRepclassRecommendation = true;
+                ro.transferRepClass = '';
+                ro.transferReason = '';
+                ro.repClassReviewRequired = false;
+            }
+        });
+    }
+
+    const priorGetRepairClassDataForRoDwell = typeof getRepairClassDataForRo === 'function' ? getRepairClassDataForRo : null;
+    if (priorGetRepairClassDataForRoDwell) {
+        getRepairClassDataForRo = function(roOrOrder) {
+            const ro = typeof roOrOrder === 'object' ? roOrOrder : null;
+            if (ro) {
+                const txt = [ro.customer, ro.rawCustomerLocation, ro.branch, ro.subregion, ro.custKey, ro.drillTopLevel].map(v => String(v || '').toUpperCase()).join(' | ');
+                if (txt.includes('PURPLE WAVE') || ro.purpleWaveNoRepclassRecommendation) {
+                    const original = ro.originalRepClass || 'SCHEDULED';
+                    return { originalRepClass: original, transferRepClass: '', transferReason: 'Purple Wave is scheduled-only; no REPCLASS recommendation applies.', hasTransfer: false };
+                }
+            }
+            return priorGetRepairClassDataForRoDwell.apply(this, arguments);
+        };
+    }
+
+    function syncDwellTrackingForCurrentData() {
+        if (!Array.isArray(processedData) || processedData.length === 0) return;
+        const now = new Date();
+        const nowIso = now.toISOString();
+        const updates = {};
+        let changed = false;
+        (processedData || []).forEach(ro => {
+            if (!ro || !ro.roNum || !ro.isOpen) return;
+            const roNum = String(ro.roNum || '');
+            if (!roNum || roNum.startsWith('NO RO') || roNum.startsWith('SEE_OTHER:')) return;
+            const safeRo = safeFirebaseKey(roNum);
+            const bucket = dwellNormalizeStatusBucket(ro.status);
+            if (bucket === 'NO_ACTIVE_RO' || bucket === 'FINAL_CHARGES') return;
+            const existing = (globalDwellTrackingState && globalDwellTrackingState[safeRo]) ? globalDwellTrackingState[safeRo] : null;
+            const sameStatus = existing && String(existing.statusBucket || '') === String(bucket);
+            const startedAt = sameStatus && existing.statusStartedAt ? existing.statusStartedAt : nowIso;
+            const payload = {
+                roNumber: ro.roNum || '',
+                unitNo: ro.unitNo || '',
+                customer: ro.customer || ro.branch || ro.rawCustomerLocation || '',
+                owner: ro.owner || '',
+                sourceQueue: dwellQueueType(ro),
+                statusBucket: bucket,
+                statusLabel: dwellStatusLabel(bucket),
+                statusText: ro.status || '',
+                statusStartedAt: startedAt,
+                lastSeenAt: nowIso,
+                lastSeenDate: getLocalDateKey(now),
+                thresholdLabel: dwellThresholdLabel(ro),
+                thresholdHours: dwellThresholdHours(ro),
+                workbookFingerprint: currentWorkbookFingerprint || ''
+            };
+            if (!existing || existing.statusBucket !== payload.statusBucket || existing.statusText !== payload.statusText || existing.unitNo !== payload.unitNo || existing.owner !== payload.owner || existing.sourceQueue !== payload.sourceQueue) {
+                changed = true;
+                globalDwellTrackingState[safeRo] = payload;
+                updates[`dwellTracking/${safeRo}`] = payload;
+            } else {
+                globalDwellTrackingState[safeRo].lastSeenAt = nowIso;
+                globalDwellTrackingState[safeRo].lastSeenDate = payload.lastSeenDate;
+                updates[`dwellTracking/${safeRo}/lastSeenAt`] = nowIso;
+                updates[`dwellTracking/${safeRo}/lastSeenDate`] = payload.lastSeenDate;
+            }
+        });
+        try { localStorage.setItem('dwell_tracking', JSON.stringify(globalDwellTrackingState || {})); } catch(e) {}
+        if (db && Object.keys(updates).length > 0) db.ref().update(updates).catch(err => console.warn('Dwell tracking sync failed:', err));
+        if (changed && typeof renderPerformanceReporting === 'function') renderPerformanceReporting();
+    }
+
+    if (typeof initFirebaseSync === 'function') {
+        const priorInitFirebaseSyncDwell = initFirebaseSync;
+        initFirebaseSync = function() {
+            const result = priorInitFirebaseSyncDwell.apply(this, arguments);
+            try {
+                if (db && !window.__oscDwellFirebaseHooked) {
+                    window.__oscDwellFirebaseHooked = true;
+                    db.ref('dwellTracking').on('value', (snapshot) => {
+                        globalDwellTrackingState = snapshot.val() || {};
+                        try { localStorage.setItem('dwell_tracking', JSON.stringify(globalDwellTrackingState)); } catch(e) {}
+                        updateAllDwellReasonControls();
+                        if (typeof renderPerformanceReporting === 'function') renderPerformanceReporting();
+                    });
+                    db.ref('dwellReasons').on('value', (snapshot) => {
+                        globalDwellReasonState = snapshot.val() || {};
+                        try { localStorage.setItem('dwell_reasons', JSON.stringify(globalDwellReasonState)); } catch(e) {}
+                        updateAllDwellReasonControls();
+                        scheduleComplianceDailySnapshotLog();
+                        if (typeof renderPerformanceReporting === 'function') renderPerformanceReporting();
+                    });
+                    setTimeout(syncDwellTrackingForCurrentData, 800);
+                }
+            } catch(e) { console.warn('Dwell Firebase hook failed:', e); }
+            return result;
+        };
+    }
+
+    if (typeof processExcelData === 'function') {
+        const priorProcessExcelDataDwell = processExcelData;
+        processExcelData = function() {
+            const result = priorProcessExcelDataDwell.apply(this, arguments);
+            try {
+                markPurpleWaveRepclassClean();
+                if (typeof triggerViewUpdate === 'function') triggerViewUpdate();
+                setTimeout(syncDwellTrackingForCurrentData, 900);
+                setTimeout(() => { if (typeof renderPerformanceReporting === 'function') renderPerformanceReporting(); }, 1200);
+            } catch(e) { console.warn('Dwell process wrapper failed:', e); }
+            return result;
+        };
+    }
+
+    function buildPerformanceReportingRows() {
+        const rows = [];
+        (processedData || []).forEach(ro => {
+            if (!ro || !ro.roNum || !ro.isOpen || String(ro.roNum).startsWith('NO RO') || String(ro.roNum).startsWith('SEE_OTHER:')) return;
+            const safeRo = safeFirebaseKey(ro.roNum);
+            const track = getDwellTrackRecord(safeRo) || {};
+            const thresholdHours = dwellThresholdHours(ro);
+            if (thresholdHours === null || thresholdHours === undefined) return;
+            const ageMs = getDwellAgeMs(ro);
+            const exceeded = isDwellExceeded(ro);
+            const reasonRec = getDwellReasonRecord(ro);
+            rows.push({
+                coordinator: ro.owner || (Array.isArray(ro.kpiOwners) ? ro.kpiOwners.join(', ') : '') || 'Unassigned',
+                queue: dwellQueueType(ro),
+                customer: ro.customer || ro.branch || ro.rawCustomerLocation || '',
+                unitNo: ro.unitNo || '',
+                roNum: ro.roNum || '',
+                roUrl: `https://afshub.azurewebsites.net/Vendors/VendedRepairOrder/Estimate/${encodeURIComponent(ro.roNum || '')}`,
+                statusBucket: dwellStatusLabel(dwellNormalizeStatusBucket(ro.status)),
+                statusText: ro.status || '',
+                statusStartedAt: track.statusStartedAt || '',
+                statusStartedDisplay: track.statusStartedAt ? new Date(track.statusStartedAt).toLocaleString() : 'Not logged yet',
+                ageMs,
+                ageDisplay: formatDwellDuration(ageMs),
+                limit: dwellThresholdLabel(ro),
+                exceeded,
+                reason: reasonRec && reasonRec.reason ? reasonRec.reason : '',
+                compliance: exceeded ? (reasonRec ? 'Reason Captured' : 'Missing Reason') : 'Within Limit'
+            });
+        });
+        rows.sort((a,b) => (b.exceeded - a.exceeded) || (b.ageMs - a.ageMs) || a.coordinator.localeCompare(b.coordinator));
+        return rows;
+    }
+
+    window.renderPerformanceReporting = function() {
+        const body = document.getElementById('performance-reporting-body');
+        const summary = document.getElementById('performance-reporting-summary');
+        if (!body) return;
+        const statusFilter = (document.getElementById('performance-status-filter') || {}).value || 'ALL';
+        const queueFilter = (document.getElementById('performance-queue-filter') || {}).value || 'ALL';
+        let rows = buildPerformanceReportingRows();
+        if (queueFilter !== 'ALL') rows = rows.filter(r => r.queue === queueFilter);
+        if (statusFilter === 'OVERDUE') rows = rows.filter(r => r.exceeded);
+        if (statusFilter === 'MISSING_REASON') rows = rows.filter(r => r.exceeded && !r.reason);
+        if (statusFilter === 'HAS_REASON') rows = rows.filter(r => r.exceeded && r.reason);
+        const all = buildPerformanceReportingRows();
+        const tracked = all.length;
+        const overdue = all.filter(r => r.exceeded).length;
+        const missing = all.filter(r => r.exceeded && !r.reason).length;
+        const captured = all.filter(r => r.exceeded && r.reason).length;
+        if (summary) {
+            summary.innerHTML = `
+                <div class="performance-kpi-card"><div class="label">Tracked Dwell Items</div><div class="value">${tracked}</div></div>
+                <div class="performance-kpi-card"><div class="label">Over Threshold</div><div class="value" style="color:#dc2626;">${overdue}</div></div>
+                <div class="performance-kpi-card"><div class="label">Missing Reason</div><div class="value" style="color:#dc2626;">${missing}</div></div>
+                <div class="performance-kpi-card"><div class="label">Reasons Captured</div><div class="value" style="color:#16a34a;">${captured}</div></div>`;
+        }
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="10"><div class="compliance-reporting-message">No dwell/performance rows match the current filters.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = rows.map(r => `
+            <tr>
+                <td>${escapeHtml(r.coordinator)}</td>
+                <td>${escapeHtml(dwellQueueLabel(r.queue))}</td>
+                <td>${escapeHtml(r.customer)}</td>
+                <td>${escapeHtml(r.unitNo)}</td>
+                <td><a class="ro-link" href="${escapeHtml(r.roUrl)}" target="_blank">${escapeHtml(r.roNum)}</a></td>
+                <td><strong>${escapeHtml(r.statusBucket)}</strong><br><span style="font-size:10px;color:#64748b;font-weight:800;">${escapeHtml(r.statusText)}</span></td>
+                <td>${escapeHtml(r.statusStartedDisplay)}</td>
+                <td class="${r.exceeded ? 'performance-overdue' : 'performance-ok'}">${escapeHtml(r.ageDisplay)}</td>
+                <td>${escapeHtml(r.limit)}</td>
+                <td>${r.exceeded ? (r.reason ? `<span class="dwell-badge reasoned">${escapeHtml(r.reason)}</span>` : '<span class="dwell-badge warn">Missing Reason</span>') : '<span class="dwell-badge ok">Within Limit</span>'}</td>
+            </tr>`).join('');
+    };
+
+    window.exportPerformanceReportingToExcel = function() {
+        const rows = buildPerformanceReportingRows();
+        const aoa = [[
+            'Coordinator','Queue','Customer / Location','Unit','VRO','Status Bucket','Status Text','Status Started','Dwell Age','Limit','Over Threshold','Reason','Compliance'
+        ]];
+        rows.forEach(r => aoa.push([
+            r.coordinator, dwellQueueLabel(r.queue), r.customer, r.unitNo, r.roNum, r.statusBucket, r.statusText, r.statusStartedDisplay, r.ageDisplay, r.limit, r.exceeded ? 'YES' : 'NO', r.reason || '', r.compliance
+        ]));
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{wch:24},{wch:12},{wch:34},{wch:15},{wch:16},{wch:18},{wch:22},{wch:24},{wch:12},{wch:18},{wch:14},{wch:22},{wch:18}];
+        ws['!autofilter'] = { ref: `A1:M${Math.max(aoa.length, 1)}` };
+        const headerStyle = { font:{bold:true,color:{rgb:'FFFFFF'}}, fill:{patternType:'solid',fgColor:{rgb:'1F4E78'}}, alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        const bodyStyle = { alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        for (let c=0;c<aoa[0].length;c++) { const cell=XLSX.utils.encode_cell({r:0,c}); if(ws[cell]) ws[cell].s=headerStyle; }
+        for (let r=1;r<aoa.length;r++) for (let c=0;c<aoa[0].length;c++) { const cell=XLSX.utils.encode_cell({r,c}); if(ws[cell]) ws[cell].s=bodyStyle; }
+        rows.forEach((r, idx) => { const cell=XLSX.utils.encode_cell({r:idx+1,c:4}); if(ws[cell]) ws[cell].l={Target:r.roUrl,Tooltip:'Open VRO in AFS Hub'}; });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Performance Reporting');
+        XLSX.writeFile(wb, `OSC_Performance_Reporting_${getLocalDateKey(new Date())}.xlsx`);
+    };
+})();
+</script>
+
+<script>
+/* === OSC+ Performance Reporting Customer Tabs / Garda Daily Metrics Override === */
+(function(){
+    const PERF_AGING_BUCKETS = ['0-3 Days','4-7 Days','8-14 Days','15-30 Days','30+ Days'];
+    const PERF_ALLOWED_CUSTOMERS = [
+        'GARDA',
+        'BRINKS',
+        'FRONTIER',
+        'FERGUSON',
+        'PREMIER TRUCK RENTAL',
+        'PURPLE WAVE',
+        'SUKUT CONSTRUCTION',
+        'US FOODS',
+        'C&L TRANSPORT'
+    ];
+
+    const PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST = new Set([
+        '26022',
+        '25092',
+        '25095',
+        '14031',
+        '27010',
+        '27032',
+        '25097',
+        '27008',
+        '14089',
+        '14024',
+        '13068',
+        '13063',
+        '27065',
+        '13062',
+        '13066',
+        '13069',
+        '13065',
+        '19067',
+        '19064',
+        '19065',
+        '19051',
+        '19060',
+        '19050',
+        '19066',
+        '19024',
+        '19053',
+        '19045',
+        '19058',
+        '19055',
+        '19056',
+        '19049',
+        '14092',
+        '14082',
+        '14095',
+        '14421',
+        '28055',
+        '14027',
+        '14028',
+        '13075',
+        '13072',
+        '13020',
+        '13076',
+        '26007',
+        '13011',
+        '13074',
+        '13080',
+        '26003',
+        '26023',
+        '26019',
+        '26001',
+        '26031',
+        '26002',
+        '12015',
+        '12038',
+        '12061',
+        '23060',
+        '23039',
+        '23087',
+        '23080',
+        '23059',
+        '23091',
+        '23053',
+        '23051',
+        '23058',
+        '23050',
+        '23052',
+        '23049',
+        '23047',
+        '12025',
+        '12023',
+        '13088',
+        '23095',
+        '23096',
+        '23016',
+        '12027',
+        '23034',
+        '23037',
+        '12082',
+    ]);
+
+    function perfEsc(value) {
+        if (typeof escapeHtml === 'function') return escapeHtml(value == null ? '' : value);
+        return String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    }
+
+    function perfMoney(value) {
+        const n = Number(value || 0);
+        return n.toLocaleString(undefined, { style:'currency', currency:'USD', maximumFractionDigits:0 });
+    }
+
+    function perfPct(value) {
+        if (value === null || value === undefined || value === '' || isNaN(Number(value))) return 'N/A';
+        return Number(value).toFixed(1) + '%';
+    }
+
+    function perfDateKey() {
+        try { return getLocalDateKey(new Date()); } catch(e) { return new Date().toISOString().slice(0,10); }
+    }
+
+    function perfParseDate(value) {
+        try {
+            if (typeof parseDateSafe === 'function') return parseDateSafe(value);
+        } catch(e) {}
+        const d = new Date(value);
+        return d && !isNaN(d.getTime()) ? d : null;
+    }
+
+    function perfBranchCode(value) {
+        const raw = String(value || '');
+        const match = raw.match(/(\d{3})[- ]?(\d{2})/);
+        if (match) return match[1] + match[2];
+        try {
+            return (typeof normalizeBranchStr === 'function' && normalizeBranchStr(value)) || raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        } catch(e) {
+            return raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+    }
+
+    function perfNormalizeAllowedCustomer(value) {
+        const raw = String(value || '').toUpperCase().trim();
+        if (!raw || raw === 'UNKNOWN') return 'UNKNOWN';
+        const compact = raw.replace(/[^A-Z0-9]+/g, ' ');
+        const squashed = raw.replace(/[^A-Z0-9]/g, '');
+        if (/\bGARDA\b/.test(compact) || squashed.includes('GARDA')) return 'GARDA';
+        if (/\bBRINKS?\b/.test(compact) || squashed.includes('BRINKS')) return 'BRINKS';
+        if (/\bFRONTIER\b/.test(compact) || squashed.includes('FRONTIER')) return 'FRONTIER';
+        if (/\bFERGUSON\b/.test(compact) || squashed.includes('FERGUSON')) return 'FERGUSON';
+        if (compact.includes('PREMIER TRUCK RENTAL') || compact.includes('PREMIER') || /\bPTR\b/.test(compact) || squashed.includes('PREMIERTRUCKRENTAL')) return 'PREMIER TRUCK RENTAL';
+        if (compact.includes('PURPLE WAVE') || squashed.includes('PURPLEWAVE')) return 'PURPLE WAVE';
+        if (compact.includes('SUKUT CONSTRUCTION') || compact.includes('SUKUT') || squashed.includes('SUKUTCONSTRUCTION')) return 'SUKUT CONSTRUCTION';
+        if (compact.includes('US FOODS') || compact.includes('US FOOD') || squashed.includes('USFOODS') || squashed.includes('USFOOD')) return 'US FOODS';
+        if (compact.includes('C L TRANSPORT') || compact.includes('CL TRANSPORT') || compact.includes('C AND L TRANSPORT') || squashed.includes('CLTRANSPORT') || squashed.includes('CANDLTRANSPORT')) return 'C&L TRANSPORT';
+        return 'UNKNOWN';
+    }
+
+    function perfIsFinalClosedCancelledStatus(status) {
+        const s = String(status || '').toUpperCase();
+        return s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED') || s.includes('CANCELLED') || s.includes('CANCELED') || s.includes('VOID');
+    }
+
+    function perfIsRealOpenRo(ro) {
+        if (!ro || !ro.roNum || !ro.isOpen) return false;
+        const rn = String(ro.roNum || '').trim();
+        if (!rn || rn.startsWith('NO RO') || rn.startsWith('SEE_OTHER:')) return false;
+        if (perfIsFinalClosedCancelledStatus(ro.status)) return false;
+        return true;
+    }
+
+    function perfIsErsRo(ro) {
+        try { if (typeof dwellQueueType === 'function' && dwellQueueType(ro) === 'ERS') return true; } catch(e) {}
+        const txt = [ro && ro.sourceQueue, ro && ro.repClassQueueAssignment, ro && ro.createdByTeam, ro && ro.originalRepClass, ro && ro.currentRepClass, ro && ro.repClass].map(v => String(v || '').toUpperCase()).join(' | ');
+        return txt.includes('ERS') || txt.includes('ERSA') || txt.includes('ROAD CALL') || txt.includes('OSC RD');
+    }
+
+    function perfIsGardaVendedBranch(branch) {
+        const code = perfBranchCode(branch);
+        if (code && PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return true;
+        try {
+            return !!(code && window.GARDA_VENDED_BRANCH_CODE_WHITELIST && window.GARDA_VENDED_BRANCH_CODE_WHITELIST.has && window.GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code));
+        } catch(e) {}
+        try { return !!(code && typeof GARDA_VENDED_BRANCH_CODE_WHITELIST !== 'undefined' && GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)); } catch(e) {}
+        return false;
+    }
+
+    function perfCustomerFromRo(ro) {
+        const branch = String((ro && (ro.branch || ro.rawCustomerLocation || ro.customer)) || '').trim();
+        const combined = [ro && ro.customer, ro && ro.custKey, ro && ro.drillTopLevel, ro && ro.rawCustomerLocation, ro && ro.branch, ro && ro.Customer, ro && ro.customerName].join(' ');
+        if (perfIsGardaVendedBranch(branch) || /\bGARDA\b/i.test(combined)) return 'GARDA';
+        return perfNormalizeAllowedCustomer(combined);
+    }
+
+    function perfCustomerFromBranch(branch) {
+        if (perfIsGardaVendedBranch(branch)) return 'GARDA';
+        return perfNormalizeAllowedCustomer(branch);
+    }
+
+    function perfIncludeErs() {
+        const cb = document.getElementById('performance-include-ers');
+        return !!(cb && cb.checked);
+    }
+
+    function perfSelectedCustomer() {
+        const dd = document.getElementById('performance-customer-filter');
+        return dd ? (dd.value || 'ALL') : 'ALL';
+    }
+
+    function perfQueueFilter() {
+        const dd = document.getElementById('performance-queue-filter');
+        if (!dd) return ['ALL'];
+        if (dd.multiple) {
+            let values = Array.from(dd.selectedOptions || []).map(o => o.value).filter(Boolean);
+            if (values.length > 1 && values.includes('ALL')) values = values.filter(v => v !== 'ALL');
+            return values.length ? values : ['ALL'];
+        }
+        return [dd.value || 'ALL'];
+    }
+
+    function perfStatusFilter() {
+        const dd = document.getElementById('performance-status-filter');
+        return dd ? (dd.value || 'ALL') : 'ALL';
+    }
+
+    function perfShouldIncludeRo(ro, opts) {
+        opts = opts || {};
+        if (!perfIsRealOpenRo(ro)) return false;
+        const includeErs = opts.includeErs !== undefined ? opts.includeErs : perfIncludeErs();
+        if (!includeErs && perfIsErsRo(ro)) return false;
+        const customer = perfCustomerFromRo(ro);
+        if (!customer || customer === 'UNKNOWN') return false;
+        if (opts.customer && opts.customer !== 'ALL' && customer !== opts.customer) return false;
+        const qfRaw = opts.queue || ['ALL'];
+        const qf = Array.isArray(qfRaw) ? qfRaw : [qfRaw];
+        if (!qf.includes('ALL')) {
+            let q = 'VR';
+            try { q = typeof dwellQueueType === 'function' ? dwellQueueType(ro) : (perfIsErsRo(ro) ? 'ERS' : 'VR'); } catch(e) { q = perfIsErsRo(ro) ? 'ERS' : 'VR'; }
+            if (!qf.includes(q)) return false;
+        }
+        return true;
+    }
+
+    function perfOpenedAgeDays(ro) {
+        const d = perfParseDate(ro && ro.openedFormatted);
+        if (!d) return null;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        d.setHours(0,0,0,0);
+        return Math.max(0, Math.floor((today.getTime() - d.getTime()) / 86400000));
+    }
+
+    function perfAgingBucket(days) {
+        if (days === null || days === undefined || isNaN(Number(days))) return 'Unknown';
+        const d = Number(days);
+        if (d <= 3) return '0-3 Days';
+        if (d <= 7) return '4-7 Days';
+        if (d <= 14) return '8-14 Days';
+        if (d <= 30) return '15-30 Days';
+        return '30+ Days';
+    }
+
+    function perfGetVendorForRo(ro) {
+        const rn = String((ro && ro.roNum) || '').toUpperCase().trim();
+        const fin = (window.globalOrderFin && window.globalOrderFin[rn]) || (typeof globalOrderFin !== 'undefined' && globalOrderFin ? globalOrderFin[rn] : null) || {};
+        return String(fin.vendor || ro.vendor || ro.shopVendor || '').trim();
+    }
+
+    function perfGetUsefulPctForBranch(branch) {
+        const code = perfBranchCode(branch);
+        let pct = null;
+        try {
+            const p = branchUsefulMap && branchUsefulMap[code] ? branchUsefulMap[code] : null;
+            if (p && p.TOTAL !== null && p.TOTAL !== undefined) pct = Number(p.TOTAL) * 100;
+        } catch(e) {}
+        if ((pct === null || isNaN(pct)) && typeof getSummaryUsefulPctNumber === 'function') {
+            try {
+                const m = perfFindSummaryNodeByBranch(branch);
+                if (m) pct = getSummaryUsefulPctNumber(m.displayNode, m.usefulNode);
+            } catch(e) {}
+        }
+        return pct;
+    }
+
+    function perfFindSummaryNodeByBranch(branch) {
+        const branchCode = perfBranchCode(branch);
+        for (const reg of Object.keys(summaryTree || {})) {
+            const r = summaryTree[reg] || {};
+            for (const sub of Object.keys(r.subs || {})) {
+                const s = r.subs[sub] || {};
+                for (const bra of Object.keys(s.branches || {})) {
+                    if (perfBranchCode(bra) === branchCode) {
+                        let usefulNode = null;
+                        try { usefulNode = typeof getSummaryUsefulNode === 'function' ? getSummaryUsefulNode(reg, sub, bra) : null; } catch(e) {}
+                        return { region: reg, subregion: sub, branch: bra, displayNode: s.branches[bra], usefulNode: usefulNode };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    function perfEmptyBranch(customer, region, subregion, branch) {
+        return {
+            customer: customer || 'UNKNOWN',
+            region: region || '',
+            subregion: subregion || '',
+            branch: branch || 'Unknown Branch',
+            totalUnits: 0,
+            oosUnits: 0,
+            usefulPct: null,
+            vendors: new Set(),
+            openVros: 0,
+            lateEcd: 0,
+            missingEcd: 0,
+            aging: { '0-3 Days':0, '4-7 Days':0, '8-14 Days':0, '15-30 Days':0, '30+ Days':0, 'Unknown':0 },
+            overDwell: 0,
+            missingDwellReason: 0,
+            roDetails: []
+        };
+    }
+
+    function perfBuildCustomerOptions() {
+        // Keep this fixed to real OSC+ customers only. This prevents city/location strings from becoming customer filters.
+        return PERF_ALLOWED_CUSTOMERS.slice();
+    }
+
+    function perfEnsureControls() {
+        const toolbar = document.querySelector('#performance-reporting-view .performance-reporting-toolbar');
+        if (!toolbar) return;
+        if (!document.getElementById('performance-customer-filter')) {
+            const field = document.createElement('div');
+            field.className = 'performance-reporting-field';
+            field.innerHTML = '<label for="performance-customer-filter">Customer</label><select id="performance-customer-filter" onchange="renderPerformanceReporting()"><option value="ALL">All Customers</option></select>';
+            toolbar.insertBefore(field, toolbar.firstChild);
+        }
+        if (!document.getElementById('performance-include-ers')) {
+            const field = document.createElement('div');
+            field.className = 'performance-reporting-field performance-ers-toggle-field';
+            field.innerHTML = '<label>&nbsp;</label><label class="performance-ers-toggle"><input type="checkbox" id="performance-include-ers" onchange="renderPerformanceReporting()"> Include ERS Data</label>';
+            const refreshBtn = toolbar.querySelector('button');
+            toolbar.insertBefore(field, refreshBtn || null);
+        }
+        const queueDd = document.getElementById('performance-queue-filter');
+        if (queueDd && !queueDd.multiple) {
+            queueDd.multiple = true;
+            queueDd.size = 4;
+            queueDd.title = 'Use Ctrl/Cmd-click to select multiple queues. Leave blank or select All Queues for all queues.';
+            const allOpt = Array.from(queueDd.options || []).find(o => o.value === 'ALL');
+            if (allOpt) allOpt.selected = true;
+        }
+        const customerDd = document.getElementById('performance-customer-filter');
+        if (customerDd) {
+            const current = customerDd.value || 'ALL';
+            const opts = perfBuildCustomerOptions();
+            customerDd.innerHTML = '<option value="ALL">All Customers</option>' + opts.map(c => `<option value="${perfEsc(c)}">${perfEsc(c)}</option>`).join('');
+            customerDd.value = opts.includes(current) ? current : 'ALL';
+        }
+    }
+
+    function perfSetTableHeaders() {
+        const table = document.getElementById('performance-reporting-table');
+        if (!table) return;
+        table.innerHTML = `
+            <colgroup>
+                <col style="width:9%;"><col style="width:10%;"><col style="width:10%;"><col style="width:19%;"><col style="width:7%;"><col style="width:7%;"><col style="width:10%;"><col style="width:7%;"><col style="width:9%;"><col style="width:12%;"><col style="width:10%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Customer</th><th>Region</th><th>Subregion</th><th>Branch Location</th><th>OOS Units</th><th>Useful %</th><th>Vendors Used</th><th>Open VROs</th><th>ECD Pareto</th><th>Aging VRO Pareto</th><th>Dwell Exceptions</th>
+                </tr>
+            </thead>
+            <tbody id="performance-reporting-body"><tr><td colspan="11"><div class="compliance-reporting-message">Performance Reporting will load after OSC+ data is processed.</div></td></tr></tbody>`;
+    }
+
+    function perfBranchKey(customer, branch) {
+        return `${customer || 'UNKNOWN'}|${perfBranchCode(branch)}|${String(branch || '').toUpperCase().trim()}`;
+    }
+
+
+    function perfParseUsefulNumber(value) {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+        const cleaned = String(value).replace(/,/g, '').trim();
+        if (!cleaned) return null;
+        const parsed = parseFloat(cleaned.replace('%', ''));
+        if (isNaN(parsed)) return null;
+        return cleaned.includes('%') ? parsed / 100 : parsed;
+    }
+
+    function perfToNumber(value) {
+        if (value === null || value === undefined || value === '') return 0;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        const parsed = parseFloat(String(value).replace(/[$,%\s,]/g, ''));
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function perfBuildGardaVendedBaseFromRaw(oosRawAOA, usefulRawAOA) {
+        const base = {};
+        const put = (branch, region, subregion) => {
+            const code = perfBranchCode(branch);
+            if (!code || !PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return null;
+            if (!base[code]) {
+                base[code] = {
+                    code,
+                    customer: 'GARDA',
+                    region: String(region || '').trim(),
+                    subregion: String(subregion || '').trim(),
+                    branch: String(branch || '').trim(),
+                    totalUnits: 0,
+                    oosUnits: 0,
+                    usefulPct: null,
+                    fromUseful: false,
+                    fromOos: false
+                };
+            }
+            const rec = base[code];
+            if (!rec.region && region) rec.region = String(region || '').trim();
+            if (!rec.subregion && subregion) rec.subregion = String(subregion || '').trim();
+            if ((!rec.branch || rec.branch === 'Unknown Branch') && branch) rec.branch = String(branch || '').trim();
+            return rec;
+        };
+
+        (usefulRawAOA || []).forEach(row => {
+            if (!row || row.length < 3) return;
+            const branch = row[2];
+            const code = perfBranchCode(branch);
+            if (!code || !PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return;
+            const rec = put(branch, row[0], row[1]);
+            if (!rec) return;
+            const totalUnits = perfToNumber(row[23]);
+            const oosUnits = perfToNumber(row[24]);
+            const useful = perfParseUsefulNumber(row[27]);
+            if (totalUnits || oosUnits || useful !== null) {
+                rec.totalUnits = totalUnits;
+                rec.oosUnits = oosUnits;
+                rec.usefulPct = useful !== null ? useful * 100 : null;
+                rec.fromUseful = true;
+            }
+        });
+
+        const unitSeen = {};
+        (oosRawAOA || []).forEach((row, idx) => {
+            if (!row || row.length < 4) return;
+            const branch = row[2];
+            const code = perfBranchCode(branch);
+            if (!code || !PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return;
+            const unit = String(row[3] || '').toUpperCase().trim();
+            if (!unit || unit === 'UNIT #' || unit === 'UNIT') return;
+            const rec = put(branch, row[0], row[1]);
+            if (!rec) return;
+            unitSeen[code] = unitSeen[code] || new Set();
+            if (!unitSeen[code].has(unit)) {
+                unitSeen[code].add(unit);
+                if (!rec.fromUseful) rec.totalUnits += 1;
+                if (String(row[8] || '').toUpperCase().trim() === 'OOS') {
+                    if (!rec.fromUseful) rec.oosUnits += 1;
+                }
+            }
+            rec.fromOos = true;
+        });
+
+        return base;
+    }
+
+    function perfGetGardaVendedBase() {
+        const current = window.performanceGardaVendedBase || {};
+        if (Object.keys(current).length) return current;
+
+        const base = {};
+        try {
+            Object.keys(branchUsefulMap || {}).forEach(code => {
+                if (!PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return;
+                const p = branchUsefulMap[code] || {};
+                base[code] = {
+                    code,
+                    customer: 'GARDA',
+                    region: '',
+                    subregion: '',
+                    branch: code,
+                    totalUnits: 0,
+                    oosUnits: 0,
+                    usefulPct: p && p.TOTAL !== null && p.TOTAL !== undefined ? Number(p.TOTAL) * 100 : null
+                };
+            });
+        } catch(e) {}
+
+        try {
+            Object.keys(masterUnits || {}).forEach(unitKey => {
+                const m = masterUnits[unitKey] || {};
+                const code = perfBranchCode(m.branch);
+                if (!code || !PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) return;
+                if (!base[code]) {
+                    base[code] = { code, customer:'GARDA', region:m.region || '', subregion:m.subregion || '', branch:m.branch || code, totalUnits:0, oosUnits:0, usefulPct:null };
+                }
+                const rec = base[code];
+                if (!rec.region && m.region) rec.region = m.region;
+                if (!rec.subregion && m.subregion) rec.subregion = m.subregion;
+                if (!rec.branch || rec.branch === code) rec.branch = m.branch || rec.branch;
+                rec.totalUnits += 1;
+                if (m.isOOS) rec.oosUnits += 1;
+                const useful = perfGetUsefulPctForBranch(rec.branch);
+                if (useful !== null && !isNaN(useful)) rec.usefulPct = useful;
+            });
+        } catch(e) {}
+
+        return base;
+    }
+
+    function perfResolveGardaBranchForRo(ro) {
+        const base = perfGetGardaVendedBase();
+        const candidates = [
+            ro && ro.branch,
+            ro && ro.rawCustomerLocation,
+            ro && ro.customer,
+            ro && ro.Customer,
+            ro && ro.customerName,
+            ro && ro.drillCustomerLevel,
+            ro && ro.preBillingBranch,
+            ro && ro.subregion,
+            ro && ro.drillTopLevel
+        ].filter(v => v !== undefined && v !== null && String(v).trim());
+        for (const value of candidates) {
+            const code = perfBranchCode(value);
+            if (code && PERF_GARDA_VENDED_BRANCH_CODE_WHITELIST.has(code)) {
+                return base[code] || { code, customer:'GARDA', region:ro.region || '', subregion:ro.subregion || '', branch:String(value || '').trim(), totalUnits:0, oosUnits:0, usefulPct:perfGetUsefulPctForBranch(value) };
+            }
+        }
+        return null;
+    }
+
+
+    function perfBuildModel(opts) {
+        opts = Object.assign({ customer: perfSelectedCustomer(), includeErs: perfIncludeErs(), queue: perfQueueFilter(), status: perfStatusFilter() }, opts || {});
+        const branchMap = new Map();
+        const detailRows = [];
+
+        function getOrCreate(customer, region, subregion, branch) {
+            const key = perfBranchKey(customer, branch);
+            if (!branchMap.has(key)) branchMap.set(key, perfEmptyBranch(customer, region, subregion, branch));
+            const rec = branchMap.get(key);
+            if (!rec.region && region) rec.region = region;
+            if (!rec.subregion && subregion) rec.subregion = subregion;
+            return rec;
+        }
+
+        // Garda vended site base population for OOS + usefulness.
+        // This is driven by the explicit Garda vended whitelist + parsed Useful/OOS datasets.
+        // It does not depend on queue data, so selecting GARDA always shows the approved vended branches.
+        const gardaBase = perfGetGardaVendedBase();
+        Object.keys(gardaBase || {}).forEach(code => {
+            const m = gardaBase[code] || {};
+            const branch = m.branch || code || 'Unknown Branch';
+            if (!perfIsGardaVendedBranch(branch)) return;
+            if (opts.customer && opts.customer !== 'ALL' && opts.customer !== 'GARDA') return;
+            const rec = getOrCreate('GARDA', m.region || '', m.subregion || '', branch);
+            rec.totalUnits = Math.max(Number(rec.totalUnits || 0), Number(m.totalUnits || 0));
+            rec.oosUnits = Math.max(Number(rec.oosUnits || 0), Number(m.oosUnits || 0));
+            const usefulPct = m.usefulPct !== null && m.usefulPct !== undefined ? Number(m.usefulPct) : perfGetUsefulPctForBranch(branch);
+            if (usefulPct !== null && !isNaN(usefulPct)) rec.usefulPct = usefulPct;
+        });
+
+        (processedData || []).forEach(ro => {
+            if (!perfShouldIncludeRo(ro, opts)) return;
+            const customer = perfCustomerFromRo(ro);
+            const isGarda = customer === 'GARDA';
+            let branch = ro.branch || ro.customer || ro.rawCustomerLocation || 'Unknown Branch';
+            let region = ro.region || '';
+            let subregion = ro.subregion || '';
+            if (isGarda) {
+                const gardaBranch = perfResolveGardaBranchForRo(ro);
+                if (!gardaBranch) return;
+                branch = gardaBranch.branch || branch;
+                region = gardaBranch.region || region;
+                subregion = gardaBranch.subregion || subregion;
+            }
+            const rec = getOrCreate(customer, region, subregion, branch);
+            if (isGarda && rec.usefulPct === null) {
+                const usefulPct = perfGetUsefulPctForBranch(branch);
+                if (usefulPct !== null && !isNaN(usefulPct)) rec.usefulPct = usefulPct;
+            }
+
+            rec.openVros += 1;
+            const vendor = perfGetVendorForRo(ro);
+            if (vendor) rec.vendors.add(vendor);
+
+            const ecdState = String(ro.ecdState || '').toLowerCase();
+            if (ecdState === 'missing') rec.missingEcd += 1;
+            else if (ecdState === 'red') rec.lateEcd += 1;
+
+            const days = perfOpenedAgeDays(ro);
+            const agingBucket = perfAgingBucket(days);
+            rec.aging[agingBucket] = (rec.aging[agingBucket] || 0) + 1;
+
+            let exceeded = false;
+            try { exceeded = typeof isDwellExceeded === 'function' ? isDwellExceeded(ro) : false; } catch(e) {}
+            let reason = '';
+            try {
+                const rr = typeof getDwellReasonRecord === 'function' ? getDwellReasonRecord(ro) : null;
+                reason = rr && rr.reason ? rr.reason : '';
+            } catch(e) {}
+            if (exceeded) {
+                rec.overDwell += 1;
+                if (!reason) rec.missingDwellReason += 1;
+            }
+
+            const rn = String(ro.roNum || '').toUpperCase().trim();
+            const fin = (window.globalOrderFin && window.globalOrderFin[rn]) || {};
+            const detail = {
+                customer,
+                region: rec.region,
+                subregion: rec.subregion,
+                branch: rec.branch,
+                unitNo: ro.unitNo || '',
+                roNum: ro.roNum || '',
+                status: ro.status || '',
+                opened: ro.openedFormatted || '',
+                ecd: ro.ecdFormatted || '',
+                ecdState: ro.ecdState || '',
+                vendor: vendor || '',
+                coordinator: ro.owner || '',
+                queue: (function(){ try { return typeof dwellQueueType === 'function' ? dwellQueueType(ro) : (perfIsErsRo(ro) ? 'ERS' : 'VR'); } catch(e) { return perfIsErsRo(ro) ? 'ERS' : 'VR'; } })(),
+                agingBucket,
+                agingDays: days === null ? '' : days,
+                dwellExceeded: exceeded ? 'YES' : 'NO',
+                dwellReason: reason,
+                spend: Number(fin.total || ro.spend || 0)
+            };
+            rec.roDetails.push(detail);
+            detailRows.push(detail);
+        });
+
+        let branches = Array.from(branchMap.values()).map(rec => {
+            const agingText = PERF_AGING_BUCKETS.concat(['Unknown']).filter(k => rec.aging[k]).map(k => `${k}: ${rec.aging[k]}`).join(' | ') || 'No open VROs';
+            const ecdText = [`Late: ${rec.lateEcd}`, `Missing: ${rec.missingEcd}`].join(' | ');
+            return Object.assign(rec, {
+                vendorCount: rec.vendors.size,
+                vendorList: Array.from(rec.vendors).sort().join(', '),
+                ecdPareto: ecdText,
+                agingPareto: agingText,
+                dwellText: `Over: ${rec.overDwell} | Missing reason: ${rec.missingDwellReason}`
+            });
+        });
+
+        if (opts.onlyVendedLocations) branches = branches.filter(r => r.customer !== 'GARDA' || gprIsGardaBranch(r.branch));
+        const statusFilter = opts.status || 'ALL';
+        if (statusFilter === 'OVERDUE') branches = branches.filter(r => r.overDwell > 0);
+        if (statusFilter === 'MISSING_REASON') branches = branches.filter(r => r.missingDwellReason > 0);
+        if (statusFilter === 'HAS_REASON') branches = branches.filter(r => r.overDwell > 0 && r.missingDwellReason === 0);
+
+        branches.sort((a,b) => String(a.customer).localeCompare(String(b.customer)) || String(a.region).localeCompare(String(b.region)) || String(a.subregion).localeCompare(String(b.subregion)) || String(a.branch).localeCompare(String(b.branch)));
+        detailRows.sort((a,b) => String(a.customer).localeCompare(String(b.customer)) || String(a.branch).localeCompare(String(b.branch)) || String(a.unitNo).localeCompare(String(b.unitNo)) || String(a.roNum).localeCompare(String(b.roNum)));
+        return { branches, detailRows };
+    }
+
+    function perfRenderSummaryCards(branches) {
+        const summary = document.getElementById('performance-reporting-summary');
+        if (!summary) return;
+        const uniqueVendors = new Set();
+        branches.forEach(r => Array.from(r.vendors || []).forEach(v => uniqueVendors.add(v)));
+        const oos = branches.reduce((s,r) => s + Number(r.oosUnits || 0), 0);
+        const openVros = branches.reduce((s,r) => s + Number(r.openVros || 0), 0);
+        const lateMissing = branches.reduce((s,r) => s + Number(r.lateEcd || 0) + Number(r.missingEcd || 0), 0);
+        const dwellMissing = branches.reduce((s,r) => s + Number(r.missingDwellReason || 0), 0);
+        const usefulValues = branches.filter(r => r.customer === 'GARDA').map(r => Number(r.usefulPct)).filter(v => !isNaN(v));
+        const avgUseful = usefulValues.length ? (usefulValues.reduce((a,b)=>a+b,0) / usefulValues.length).toFixed(1) + '%' : 'N/A';
+        summary.innerHTML = `
+            <div class="performance-kpi-card"><div class="label">OOS Units</div><div class="value">${oos}</div></div>
+            <div class="performance-kpi-card"><div class="label">Avg Useful %</div><div class="value">${avgUseful}</div></div>
+            <div class="performance-kpi-card"><div class="label">Vendors Used</div><div class="value">${uniqueVendors.size}</div></div>
+            <div class="performance-kpi-card"><div class="label">Late / Missing ECD</div><div class="value" style="color:#dc2626;">${lateMissing}</div></div>
+            <div class="performance-kpi-card"><div class="label">Missing Dwell Reasons</div><div class="value" style="color:#dc2626;">${dwellMissing}</div></div>
+            <div class="performance-kpi-card"><div class="label">Open VROs</div><div class="value">${openVros}</div></div>`;
+    }
+
+    window.renderPerformanceReporting = function() {
+        perfEnsureControls();
+        perfSetTableHeaders();
+        const body = document.getElementById('performance-reporting-body');
+        if (!body) return;
+        const model = perfBuildModel();
+        perfRenderSummaryCards(model.branches);
+        if (!model.branches.length) {
+            body.innerHTML = '<tr><td colspan="11"><div class="compliance-reporting-message">No Performance Reporting rows match the current filters.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = model.branches.map(r => `
+            <tr>
+                <td>${perfEsc(r.customer)}</td>
+                <td>${perfEsc(r.region || '')}</td>
+                <td>${perfEsc(r.subregion || '')}</td>
+                <td><strong>${perfEsc(r.branch)}</strong></td>
+                <td>${Number(r.oosUnits || 0)}</td>
+                <td>${r.customer === 'GARDA' ? perfEsc(perfPct(r.usefulPct)) : 'N/A'}</td>
+                <td><strong>${Number(r.vendorCount || 0)}</strong>${r.vendorList ? `<br><span class="performance-muted-text">${perfEsc(r.vendorList)}</span>` : ''}</td>
+                <td>${Number(r.openVros || 0)}</td>
+                <td>${perfEsc(r.ecdPareto)}</td>
+                <td>${perfEsc(r.agingPareto)}</td>
+                <td>${r.missingDwellReason ? `<span class="dwell-badge warn">${perfEsc(r.dwellText)}</span>` : `<span class="dwell-badge ok">${perfEsc(r.dwellText)}</span>`}</td>
+            </tr>`).join('');
+    };
+
+    function perfSheetName(base, used) {
+        let name = String(base || 'Customer').replace(/[\\/?*\[\]:]/g, ' ').trim() || 'Customer';
+        name = name.slice(0, 31);
+        let finalName = name;
+        let i = 2;
+        while (used.has(finalName)) {
+            const suffix = ` ${i++}`;
+            finalName = name.slice(0, 31 - suffix.length) + suffix;
+        }
+        used.add(finalName);
+        return finalName;
+    }
+
+    function perfStyleAoaSheet(ws, headerRows) {
+        if (!ws || !ws['!ref']) return;
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        const headerStyle = { font:{bold:true,color:{rgb:'FFFFFF'}}, fill:{patternType:'solid',fgColor:{rgb:'1F4E78'}}, alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        const titleStyle = { font:{bold:true,color:{rgb:'1F4E78'}, sz:14}, alignment:{horizontal:'left',vertical:'center'} };
+        const bodyStyle = { alignment:{horizontal:'left',vertical:'top',wrapText:true} };
+        for (let R = 0; R <= range.e.r; R++) {
+            for (let C = 0; C <= range.e.c; C++) {
+                const ref = XLSX.utils.encode_cell({r:R,c:C});
+                if (!ws[ref]) continue;
+                if (headerRows.has(R)) ws[ref].s = headerStyle;
+                else if (C === 0 && String(ws[ref].v || '').match(/Reporting|Detail|Pareto/i)) ws[ref].s = titleStyle;
+                else ws[ref].s = bodyStyle;
+            }
+        }
+        ws['!cols'] = [
+            {wch:14},{wch:16},{wch:18},{wch:34},{wch:10},{wch:10},{wch:12},{wch:42},{wch:10},{wch:10},{wch:18},{wch:28},{wch:24},{wch:16},{wch:18},{wch:22},{wch:20}
+        ];
+        try { ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:1,c:0}, e:{r:Math.max(1, range.e.r), c:Math.min(16, range.e.c)}}) }; } catch(e) {}
+    }
+
+    window.exportPerformanceReportingToExcel = function() {
+        const opts = { customer: perfSelectedCustomer(), includeErs: perfIncludeErs(), queue: perfQueueFilter(), status: perfStatusFilter() };
+        const allModel = perfBuildModel(opts);
+        const wb = XLSX.utils.book_new();
+        const usedNames = new Set();
+        const exportDate = perfDateKey();
+        const includeErsText = opts.includeErs ? 'YES' : 'NO';
+
+        const overviewRows = allModel.branches.map(r => ({
+            'Report Date': exportDate,
+            'Customer': r.customer,
+            'Region': r.region || '',
+            'Subregion': r.subregion || '',
+            'Branch Location': r.branch,
+            'OOS Units': Number(r.oosUnits || 0),
+            'Total Units': Number(r.totalUnits || 0),
+            'Useful %': r.customer === 'GARDA' ? perfPct(r.usefulPct) : 'N/A',
+            'Vendors Used': Number(r.vendorCount || 0),
+            'Vendor List': r.vendorList || '',
+            'Open VROs': Number(r.openVros || 0),
+            'ECD Pareto': r.ecdPareto,
+            'Aging VRO Pareto': r.agingPareto,
+            'Over Dwell': Number(r.overDwell || 0),
+            'Missing Dwell Reason': Number(r.missingDwellReason || 0),
+            'ERS Included': includeErsText
+        }));
+        const wsOverview = XLSX.utils.json_to_sheet(overviewRows.length ? overviewRows : [{'Report Date': exportDate, 'Customer':'No rows matched filters'}]);
+        try { styleExcelHeaders(wsOverview); autoFitColumns(wsOverview, overviewRows); } catch(e) {}
+        XLSX.utils.book_append_sheet(wb, wsOverview, perfSheetName('Overview', usedNames));
+
+        const customers = Array.from(new Set(allModel.branches.map(r => r.customer))).sort();
+        customers.forEach(customer => {
+            const branches = allModel.branches.filter(r => r.customer === customer);
+            const details = allModel.detailRows.filter(r => r.customer === customer);
+            const aoa = [];
+            const headerRows = new Set();
+            aoa.push([`${customer} Daily Performance Reporting`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            headerRows.add(1);
+            aoa.push(['Report Date','Customer','Region','Subregion','Branch Location','OOS Units','Total Units','Useful %','Vendors Used','# Open VROs','Late ECD','Missing ECD','ECD Pareto','Aging VRO Pareto','Over Dwell','Missing Dwell Reason','ERS Included']);
+            branches.forEach(r => aoa.push([exportDate, r.customer, r.region || '', r.subregion || '', r.branch, Number(r.oosUnits || 0), Number(r.totalUnits || 0), r.customer === 'GARDA' ? perfPct(r.usefulPct) : 'N/A', Number(r.vendorCount || 0), Number(r.openVros || 0), Number(r.lateEcd || 0), Number(r.missingEcd || 0), r.ecdPareto, r.agingPareto, Number(r.overDwell || 0), Number(r.missingDwellReason || 0), includeErsText]));
+            aoa.push([]);
+            aoa.push([`${customer} Open VRO Detail`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            const detailHeaderRow = aoa.length;
+            headerRows.add(detailHeaderRow);
+            aoa.push(['Customer','Branch Location','Unit','VRO','Status','Opened Date','ECD','ECD State','Vendor','Coordinator','Queue','Aging Bucket','Aging Days','Dwell Exceeded','Dwell Reason','Spend','ERS Included']);
+            details.forEach(d => aoa.push([d.customer, d.branch, d.unitNo, d.roNum, d.status, d.opened, d.ecd, d.ecdState, d.vendor, d.coordinator, d.queue, d.agingBucket, d.agingDays, d.dwellExceeded, d.dwellReason || '', d.spend || 0, includeErsText]));
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            perfStyleAoaSheet(ws, headerRows);
+            XLSX.utils.book_append_sheet(wb, ws, perfSheetName(customer, usedNames));
+        });
+
+        XLSX.writeFile(wb, `OSC_Performance_Reporting_${exportDate}.xlsx`);
+    };
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .performance-ers-toggle { display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 10px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-size:12px; font-weight:900; color:#334155; white-space:nowrap; }
+        .performance-ers-toggle input { transform:scale(1.05); }
+        .performance-muted-text { display:block; margin-top:3px; color:#64748b; font-size:10px; font-weight:800; line-height:1.25; }
+        .performance-reporting-table { min-width: 1720px; table-layout: fixed; }
+        .performance-reporting-table th, .performance-reporting-table td { text-align:left; vertical-align:top; }
+        #performance-queue-filter[multiple] { min-width: 160px; height: auto; min-height: 92px; padding: 6px; }
+        #performance-queue-filter[multiple] option { padding: 3px 5px; font-weight: 800; }
+    `;
+    document.head.appendChild(style);
+
+    const priorTriggerViewUpdatePerfDaily = typeof triggerViewUpdate === 'function' ? triggerViewUpdate : null;
+    if (priorTriggerViewUpdatePerfDaily) {
+        triggerViewUpdate = function() {
+            const result = priorTriggerViewUpdatePerfDaily.apply(this, arguments);
+            try { if (document.querySelector('#performance-reporting-view.active')) window.renderPerformanceReporting(); } catch(e) {}
+            return result;
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        try { perfEnsureControls(); perfSetTableHeaders(); } catch(e) {}
+    });
+})();
+
+</script>
+
+
+
+<script>
+/* === OSC+ Garda Daily Flash / Executive Performance Reporting Override === */
+(function(){
+    const GPR_ALLOWED_CUSTOMERS = ['GARDA','BRINKS','FRONTIER','FERGUSON','PREMIER TRUCK RENTAL','PURPLE WAVE','SUKUT CONSTRUCTION','US FOODS','C&L TRANSPORT'];
+    const GPR_GARDA_BRANCH_CODES = new Set([
+        '26022','25092','25095','14031','27010','27032','25097','27008','14089','14024','13068','13063','27065','13062','13066','13069','13065','19067','19064','19065','19051','19060','19050','19066','19024','19053','19045','19058','19055','19056','19049','14092','14082','14095','14421','28055','14027','14028','13075','13072','13020','13076','26007','13011','13074','13080','26003','26023','26019','26001','26031','26002','12015','12038','12061','23060','23039','23087','23080','23059','23091','23053','23051','23058','23050','23052','23049','23047','12025','12023','13088','23095','23096','23016','12027','23034','23037','12082'
+    ]);
+    const GPR_ECD_BUCKETS = ['Past Due','0-3 Days','4-7 Days','8-14 Days','14+ Days','Missing'];
+    const GPR_AGING_BUCKETS = ['0-3 Days','4-7 Days','8-14 Days','15-30 Days','30+ Days','Unknown'];
+
+    function gprEsc(value) {
+        if (typeof escapeHtml === 'function') return escapeHtml(value == null ? '' : value);
+        return String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    }
+    function gprDateKey(d) { try { return getLocalDateKey(d || new Date()); } catch(e) { return (d || new Date()).toISOString().slice(0,10); } }
+    function gprYesterdayKey(dateKey) { const d = new Date(String(dateKey || gprDateKey()) + 'T12:00:00'); d.setDate(d.getDate() - 1); return gprDateKey(d); }
+    function gprMoney(value) { const n = Number(value || 0); return n.toLocaleString(undefined, { style:'currency', currency:'USD', maximumFractionDigits:0 }); }
+    function gprPct(value) { if (value === null || value === undefined || value === '' || isNaN(Number(value))) return 'N/A'; return Number(value).toFixed(1) + '%'; }
+    function gprPct0(value) { if (value === null || value === undefined || value === '' || isNaN(Number(value))) return 'N/A'; return Math.round(Number(value)) + '%'; }
+    function gprNum(value) { if (value === null || value === undefined || value === '') return 0; if (typeof value === 'number') return Number.isFinite(value) ? value : 0; const parsed = parseFloat(String(value).replace(/[$,%\s,]/g,'')); return isNaN(parsed) ? 0 : parsed; }
+    function gprUsefulNumber(value) { if (value === null || value === undefined || value === '') return null; if (typeof value === 'number') return Number.isFinite(value) ? value : null; const cleaned = String(value).replace(/,/g,'').trim(); if (!cleaned) return null; const parsed = parseFloat(cleaned.replace('%','')); if (isNaN(parsed)) return null; return cleaned.includes('%') ? parsed / 100 : parsed; }
+    function gprParseDate(value) {
+        try { if (typeof parseDateSafe === 'function') { const d = parseDateSafe(value); if (d && !isNaN(d.getTime())) return d; } } catch(e) {}
+        if (typeof value === 'number' && value > 25000 && value < 70000) {
+            const d = new Date(Math.round((value - 25569) * 86400 * 1000));
+            if (d && !isNaN(d.getTime())) return d;
+        }
+        const d = new Date(value);
+        return d && !isNaN(d.getTime()) ? d : null;
+    }
+    function gprFormatDate(value) { const d = gprParseDate(value); return d ? d.toLocaleDateString() : (value || ''); }
+    function gprBranchCode(value) {
+        const raw = String(value || '');
+        const match = raw.match(/(\d{3})[- ]?(\d{2})/);
+        if (match) return match[1] + match[2];
+        try { return (typeof normalizeBranchStr === 'function' && normalizeBranchStr(value)) || raw.toUpperCase().replace(/[^A-Z0-9]/g,''); } catch(e) { return raw.toUpperCase().replace(/[^A-Z0-9]/g,''); }
+    }
+    function gprIsGardaBranch(value) { const code = gprBranchCode(value); return !!(code && GPR_GARDA_BRANCH_CODES.has(code)); }
+    function gprNormalizeCustomer(value) {
+        const raw = String(value || '').toUpperCase().trim();
+        const compact = raw.replace(/[^A-Z0-9]+/g, ' ');
+        const squashed = raw.replace(/[^A-Z0-9]/g, '');
+        if (!raw || raw === 'UNKNOWN') return 'UNKNOWN';
+        if (compact.includes('GARDA') || squashed.includes('GARDA')) return 'GARDA';
+        if (/\bBRINKS?\b/.test(compact) || squashed.includes('BRINKS')) return 'BRINKS';
+        if (compact.includes('FRONTIER') || squashed.includes('FRONTIER')) return 'FRONTIER';
+        if (compact.includes('FERGUSON') || squashed.includes('FERGUSON')) return 'FERGUSON';
+        if (compact.includes('PREMIER TRUCK RENTAL') || compact.includes('PREMIER') || /\bPTR\b/.test(compact) || squashed.includes('PREMIERTRUCKRENTAL')) return 'PREMIER TRUCK RENTAL';
+        if (compact.includes('PURPLE WAVE') || squashed.includes('PURPLEWAVE')) return 'PURPLE WAVE';
+        if (compact.includes('SUKUT') || squashed.includes('SUKUTCONSTRUCTION')) return 'SUKUT CONSTRUCTION';
+        if (compact.includes('US FOODS') || compact.includes('US FOOD') || squashed.includes('USFOODS') || squashed.includes('USFOOD')) return 'US FOODS';
+        if (compact.includes('C L TRANSPORT') || compact.includes('CL TRANSPORT') || squashed.includes('CLTRANSPORT') || squashed.includes('CANDLTRANSPORT')) return 'C&L TRANSPORT';
+        return 'UNKNOWN';
+    }
+    function gprCustomerFromRo(ro) {
+        const text = [ro && ro.customer, ro && ro.custKey, ro && ro.drillTopLevel, ro && ro.rawCustomerLocation, ro && ro.branch, ro && ro.Customer, ro && ro.customerName, ro && ro.subregion].join(' ');
+        if (gprIsGardaBranch(text) || /GARDA/i.test(text)) return 'GARDA';
+        return gprNormalizeCustomer(text);
+    }
+    function gprIsFinalClosedCanceled(status) {
+        const s = String(status || '').toUpperCase();
+        return s.includes('FINAL CHARGES') || s.includes('CLOSED') || s.includes('BILLED') || s.includes('INVOICED') || s.includes('CANCELLED') || s.includes('CANCELED') || s.includes('VOID');
+    }
+    function gprIsRealActiveRo(ro) {
+        if (!ro || !ro.roNum || !ro.isOpen) return false;
+        const rn = String(ro.roNum || '').trim();
+        if (!rn || rn.startsWith('NO RO') || rn.startsWith('SEE_OTHER:')) return false;
+        if (gprIsFinalClosedCanceled(ro.status)) return false;
+        return true;
+    }
+    function gprIsErsRo(ro) {
+        try { if (typeof dwellQueueType === 'function' && dwellQueueType(ro) === 'ERS') return true; } catch(e) {}
+        const txt = [ro && ro.sourceQueue, ro && ro.repClassQueueAssignment, ro && ro.createdByTeam, ro && ro.originalRepClass, ro && ro.currentRepClass, ro && ro.repClass].map(v => String(v || '').toUpperCase()).join(' | ');
+        return txt.includes('ERS') || txt.includes('ERSA') || txt.includes('ROAD CALL') || txt.includes('OSC RD');
+    }
+    function gprQueueType(ro) { try { return typeof dwellQueueType === 'function' ? dwellQueueType(ro) : (gprIsErsRo(ro) ? 'ERS' : 'VR'); } catch(e) { return gprIsErsRo(ro) ? 'ERS' : 'VR'; } }
+    function gprQueueLabel(q) { try { return typeof dwellQueueLabel === 'function' ? dwellQueueLabel(q) : (q === 'VR' ? 'Vended Repair' : q); } catch(e) { return q === 'VR' ? 'Vended Repair' : q; } }
+    function gprSelectedCustomer() { const dd = document.getElementById('performance-customer-filter'); return dd ? (dd.value || 'ALL') : 'ALL'; }
+    function gprIncludeErs() { const cb = document.getElementById('performance-include-ers'); return !!(cb && cb.checked); }
+    function gprOnlyVendedLocations() { const cb = document.getElementById('performance-only-vended-locations'); return cb ? !!cb.checked : true; }
+    function gprQueueFilter() { const dd = document.getElementById('performance-queue-filter'); if (!dd) return ['ALL']; let vals = Array.from(dd.selectedOptions || []).map(o => o.value).filter(Boolean); if (!vals.length) vals = [dd.value || 'ALL']; if (vals.length > 1 && vals.includes('ALL')) vals = vals.filter(v => v !== 'ALL'); return vals.length ? vals : ['ALL']; }
+    function gprStatusFilter() { const dd = document.getElementById('performance-status-filter'); return dd ? (dd.value || 'ALL') : 'ALL'; }
+
+    function gprEmptyBuckets(keys) { const obj = {}; keys.forEach(k => obj[k] = 0); return obj; }
+    function gprEmptyBranch(customer, region, subregion, branch) {
+        return {
+            customer: customer || 'UNKNOWN', region: region || '', subregion: subregion || '', branch: branch || 'Unknown Branch',
+            totalUnits: 0, oosUnits: 0, usefulPct: null, vendors: new Set(), openVros: 0,
+            ecdBuckets: gprEmptyBuckets(GPR_ECD_BUCKETS), aging: gprEmptyBuckets(GPR_AGING_BUCKETS),
+            overDwell: 0, missingDwellReason: 0, dwellReasonsCaptured: 0,
+            pmDwellTotal: 0, pmDwellOk: 0, pmOpenVros: 0,
+            vrDwellTotal: 0, vrDwellOk: 0, vrOpenVros: 0,
+            roDetails: []
+        };
+    }
+    function gprAgingBucket(days) { if (days === null || days === undefined || isNaN(Number(days))) return 'Unknown'; const d = Number(days); if (d <= 3) return '0-3 Days'; if (d <= 7) return '4-7 Days'; if (d <= 14) return '8-14 Days'; if (d <= 30) return '15-30 Days'; return '30+ Days'; }
+    function gprAgeDaysFromOpened(value) { const d = gprParseDate(value); if (!d) return null; const today = new Date(); today.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.max(0, Math.floor((today.getTime() - d.getTime()) / 86400000)); }
+    function gprEcdBucket(value) {
+        const d = gprParseDate(value);
+        if (!d) return 'Missing';
+        const today = new Date(); today.setHours(0,0,0,0); d.setHours(0,0,0,0);
+        const diff = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+        if (diff < 0) return 'Past Due';
+        if (diff <= 3) return '0-3 Days';
+        if (diff <= 7) return '4-7 Days';
+        if (diff <= 14) return '8-14 Days';
+        return '14+ Days';
+    }
+    function gprBucketTotal(buckets, keys) { return (keys || Object.keys(buckets || {})).reduce((s,k) => s + Number((buckets || {})[k] || 0), 0); }
+    function gprBreakdownText(buckets, keys) {
+        const total = gprBucketTotal(buckets, keys);
+        if (!total) return 'No open VROs';
+        return (keys || Object.keys(buckets)).map(k => {
+            const count = Number((buckets || {})[k] || 0);
+            const pct = total ? Math.round((count / total) * 100) : 0;
+            return `${k}: ${pct}% (${count})`;
+        }).join(' | ');
+    }
+    function gprVendorText(vendor) { return String(vendor || '').trim(); }
+    function gprVendorForRo(ro) {
+        const rn = String((ro && ro.roNum) || '').toUpperCase().trim();
+        const fin = (window.globalOrderFin && window.globalOrderFin[rn]) || (typeof globalOrderFin !== 'undefined' && globalOrderFin ? globalOrderFin[rn] : null) || {};
+        return gprVendorText(fin.vendor || ro.vendor || ro.shopVendor || '');
+    }
+
+    function gprGetUsefulPctForBranch(branch) {
+        const code = gprBranchCode(branch);
+        let pct = null;
+        try { const p = branchUsefulMap && branchUsefulMap[code] ? branchUsefulMap[code] : null; if (p && p.TOTAL !== null && p.TOTAL !== undefined) pct = Number(p.TOTAL) * 100; } catch(e) {}
+        return pct;
+    }
+    function gprBuildGardaBaseFromRaw() {
+        const base = {};
+        let grand = { usefulPct:null, totalUnits:0, oosUnits:0 };
+        const put = (branch, region, subregion) => {
+            const code = gprBranchCode(branch);
+            if (!code || !GPR_GARDA_BRANCH_CODES.has(code)) return null;
+            if (!base[code]) base[code] = { code, customer:'GARDA', region:String(region || '').trim(), subregion:String(subregion || '').trim(), branch:String(branch || code).trim(), totalUnits:0, oosUnits:0, usefulPct:null };
+            const rec = base[code];
+            if (!rec.region && region) rec.region = String(region || '').trim();
+            if (!rec.subregion && subregion) rec.subregion = String(subregion || '').trim();
+            if ((!rec.branch || rec.branch === code) && branch) rec.branch = String(branch || '').trim();
+            return rec;
+        };
+        (window.oscPerfUsefulRawAOA || []).forEach(row => {
+            if (!Array.isArray(row) || row.length < 3) return;
+            const first = String(row[0] || '').toUpperCase().trim();
+            if (first === 'GRAND TOTAL') {
+                grand.totalUnits = gprNum(row[23]);
+                grand.oosUnits = gprNum(row[24]);
+                const useful = gprUsefulNumber(row[27]);
+                if (useful !== null) grand.usefulPct = useful * 100;
+            }
+            const branch = row[2];
+            const code = gprBranchCode(branch);
+            if (!code || !GPR_GARDA_BRANCH_CODES.has(code)) return;
+            const rec = put(branch, row[0], row[1]);
+            if (!rec) return;
+            rec.totalUnits = gprNum(row[23]);
+            rec.oosUnits = gprNum(row[24]);
+            const useful = gprUsefulNumber(row[27]);
+            if (useful !== null) rec.usefulPct = useful * 100;
+        });
+        const unitSeen = {};
+        (window.oscPerfOosRawAOA || []).forEach(row => {
+            if (!Array.isArray(row) || row.length < 4) return;
+            const branch = row[2];
+            const code = gprBranchCode(branch);
+            if (!code || !GPR_GARDA_BRANCH_CODES.has(code)) return;
+            const unit = String(row[3] || '').toUpperCase().trim();
+            if (!unit || unit === 'UNIT' || unit === 'UNIT #') return;
+            const rec = put(branch, row[0], row[1]);
+            unitSeen[code] = unitSeen[code] || new Set();
+            if (!unitSeen[code].has(unit)) {
+                unitSeen[code].add(unit);
+                if (!rec.totalUnits) rec.totalUnits += 1;
+                if (String(row[8] || '').toUpperCase().trim() === 'OOS' && !rec.oosUnits) rec.oosUnits += 1;
+            }
+        });
+        try {
+            Object.keys(branchUsefulMap || {}).forEach(code => {
+                if (!GPR_GARDA_BRANCH_CODES.has(code)) return;
+                if (!base[code]) base[code] = { code, customer:'GARDA', region:'', subregion:'', branch:code, totalUnits:0, oosUnits:0, usefulPct:null };
+                const p = branchUsefulMap[code] || {};
+                if (p && p.TOTAL !== null && p.TOTAL !== undefined && (base[code].usefulPct === null || isNaN(base[code].usefulPct))) base[code].usefulPct = Number(p.TOTAL) * 100;
+            });
+        } catch(e) {}
+        try {
+            Object.keys(masterUnits || {}).forEach(unitKey => {
+                const m = masterUnits[unitKey] || {};
+                const code = gprBranchCode(m.branch);
+                if (!code || !GPR_GARDA_BRANCH_CODES.has(code)) return;
+                if (!base[code]) base[code] = { code, customer:'GARDA', region:m.region || '', subregion:m.subregion || '', branch:m.branch || code, totalUnits:0, oosUnits:0, usefulPct:gprGetUsefulPctForBranch(m.branch) };
+                if (!base[code].region && m.region) base[code].region = m.region;
+                if (!base[code].subregion && m.subregion) base[code].subregion = m.subregion;
+                if (!base[code].branch || base[code].branch === code) base[code].branch = m.branch || code;
+            });
+        } catch(e) {}
+        window.oscGardaDailyGrandMetrics = grand;
+        return base;
+    }
+    function gprResolveGardaBranchForRo(ro) {
+        const base = gprBuildGardaBaseFromRaw();
+        const candidates = [ro && ro.branch, ro && ro.rawCustomerLocation, ro && ro.customer, ro && ro.Customer, ro && ro.customerName, ro && ro.drillCustomerLevel, ro && ro.preBillingBranch, ro && ro.subregion, ro && ro.drillTopLevel].filter(v => v !== undefined && v !== null && String(v).trim());
+        for (const value of candidates) {
+            const code = gprBranchCode(value);
+            if (code && GPR_GARDA_BRANCH_CODES.has(code)) return base[code] || { code, customer:'GARDA', region:ro.region || '', subregion:ro.subregion || '', branch:String(value || '').trim(), totalUnits:0, oosUnits:0, usefulPct:gprGetUsefulPctForBranch(value) };
+        }
+        return null;
+    }
+    function gprApplyHistoricalVendorUsage(branchMap) {
+        try {
+            const orderFin = window.globalOrderFin || {};
+            Object.keys(orderFin).forEach(order => {
+                const fin = orderFin[order] || {};
+                const vendor = gprVendorText(fin.vendor);
+                if (!vendor) return;
+                const candidates = [fin.customerLocation, fin.customer, fin.branch, fin.rawCustomerLocation, fin.shop].filter(Boolean);
+                for (const txt of candidates) {
+                    const code = gprBranchCode(txt);
+                    if (!code || !GPR_GARDA_BRANCH_CODES.has(code)) continue;
+                    const key = `GARDA|${code}`;
+                    const rec = branchMap.get(key);
+                    if (rec) rec.vendors.add(vendor);
+                    break;
+                }
+            });
+        } catch(e) { console.warn('Garda historical vendor usage aggregation failed:', e); }
+    }
+    function gprGetOrCreate(branchMap, customer, region, subregion, branch) {
+        const code = customer === 'GARDA' ? gprBranchCode(branch) : gprBranchCode(branch) + '|' + String(branch || '').toUpperCase().trim();
+        const key = `${customer}|${code}`;
+        if (!branchMap.has(key)) branchMap.set(key, gprEmptyBranch(customer, region, subregion, branch));
+        const rec = branchMap.get(key);
+        if (!rec.region && region) rec.region = region;
+        if (!rec.subregion && subregion) rec.subregion = subregion;
+        return rec;
+    }
+    function gprBuildModel(opts) {
+        opts = Object.assign({ customer:gprSelectedCustomer(), includeErs:gprIncludeErs(), queue:gprQueueFilter(), status:gprStatusFilter(), onlyVendedLocations:gprOnlyVendedLocations() }, opts || {});
+        const branchMap = new Map();
+        const detailRows = [];
+        const gardaBase = gprBuildGardaBaseFromRaw();
+        Object.keys(gardaBase || {}).forEach(code => {
+            if (opts.customer && opts.customer !== 'ALL' && opts.customer !== 'GARDA') return;
+            const m = gardaBase[code] || {};
+            if (opts.onlyVendedLocations && !gprIsGardaBranch(m.branch || code)) return;
+            const rec = gprGetOrCreate(branchMap, 'GARDA', m.region || '', m.subregion || '', m.branch || code);
+            rec.totalUnits = Math.max(Number(rec.totalUnits || 0), Number(m.totalUnits || 0));
+            rec.oosUnits = Math.max(Number(rec.oosUnits || 0), Number(m.oosUnits || 0));
+            if (m.usefulPct !== null && m.usefulPct !== undefined && !isNaN(Number(m.usefulPct))) rec.usefulPct = Number(m.usefulPct);
+        });
+
+        (processedData || []).forEach(ro => {
+            if (!gprIsRealActiveRo(ro)) return;
+            if (!opts.includeErs && gprIsErsRo(ro)) return;
+            const customer = gprCustomerFromRo(ro);
+            if (!customer || customer === 'UNKNOWN') return;
+            if (opts.customer && opts.customer !== 'ALL' && customer !== opts.customer) return;
+            const queue = gprQueueType(ro);
+            const qf = Array.isArray(opts.queue) ? opts.queue : [opts.queue || 'ALL'];
+            if (!qf.includes('ALL') && !qf.includes(queue)) return;
+
+            let branch = ro.branch || ro.rawCustomerLocation || ro.customer || 'Unknown Branch';
+            let region = ro.region || '';
+            let subregion = ro.subregion || '';
+            if (customer === 'GARDA') {
+                const gardaBranch = gprResolveGardaBranchForRo(ro);
+                if (!gardaBranch) return;
+                branch = gardaBranch.branch || branch;
+                region = gardaBranch.region || region;
+                subregion = gardaBranch.subregion || subregion;
+                if (opts.onlyVendedLocations && !gprIsGardaBranch(branch)) return;
+            }
+            const rec = gprGetOrCreate(branchMap, customer, region, subregion, branch);
+            if (customer === 'GARDA' && (rec.usefulPct === null || isNaN(rec.usefulPct))) {
+                const useful = gprGetUsefulPctForBranch(branch);
+                if (useful !== null && !isNaN(useful)) rec.usefulPct = useful;
+            }
+            rec.openVros += 1;
+            const vendor = gprVendorForRo(ro);
+            if (vendor) rec.vendors.add(vendor);
+
+            const ecdBucket = gprEcdBucket(ro.ecdFormatted || ro.ecd || ro.estimatedCompletionDate);
+            rec.ecdBuckets[ecdBucket] = (rec.ecdBuckets[ecdBucket] || 0) + 1;
+            const days = gprAgeDaysFromOpened(ro.openedFormatted || ro.opened || ro.openedAt);
+            const agingBucket = gprAgingBucket(days);
+            rec.aging[agingBucket] = (rec.aging[agingBucket] || 0) + 1;
+
+            let exceeded = false;
+            try { exceeded = typeof isDwellExceeded === 'function' ? isDwellExceeded(ro) : false; } catch(e) {}
+            let reason = '';
+            try { const rr = typeof getDwellReasonRecord === 'function' ? getDwellReasonRecord(ro) : null; reason = rr && rr.reason ? rr.reason : ''; } catch(e) {}
+            if (exceeded) {
+                rec.overDwell += 1;
+                if (!reason) rec.missingDwellReason += 1;
+                else rec.dwellReasonsCaptured += 1;
+            }
+            if (queue === 'PM') {
+                rec.pmOpenVros += 1;
+                rec.pmDwellTotal += 1;
+                if (!exceeded || !!reason) rec.pmDwellOk += 1;
+            }
+            if (queue === 'VR') {
+                rec.vrOpenVros += 1;
+                rec.vrDwellTotal += 1;
+                if (!exceeded || !!reason) rec.vrDwellOk += 1;
+            }
+            const rn = String(ro.roNum || '').toUpperCase().trim();
+            const fin = (window.globalOrderFin && window.globalOrderFin[rn]) || {};
+            const detail = {
+                customer, region: rec.region, subregion: rec.subregion, branch: rec.branch, unitNo: ro.unitNo || '', roNum: ro.roNum || '', status: ro.status || '',
+                opened: ro.openedFormatted || '', ecd: ro.ecdFormatted || '', ecdBucket, vendor: vendor || '', coordinator: ro.owner || '', queue: gprQueueLabel(queue),
+                agingBucket, agingDays: days === null ? '' : days, dwellExceeded: exceeded ? 'YES' : 'NO', dwellReason: reason, spend: Number(fin.total || ro.spend || 0)
+            };
+            rec.roDetails.push(detail);
+            detailRows.push(detail);
+        });
+        gprApplyHistoricalVendorUsage(branchMap);
+        let branches = Array.from(branchMap.values()).map(rec => {
+            const vendorList = Array.from(rec.vendors || []).sort().join(', ');
+            const pmCompliancePct = rec.pmDwellTotal ? (rec.pmDwellOk / rec.pmDwellTotal) * 100 : null;
+            const vrCompliancePct = rec.vrDwellTotal ? (rec.vrDwellOk / rec.vrDwellTotal) * 100 : null;
+            return Object.assign(rec, {
+                vendorCount: (rec.vendors || new Set()).size,
+                vendorList,
+                ecdBreakdown: gprBreakdownText(rec.ecdBuckets, GPR_ECD_BUCKETS),
+                agingBreakdown: gprBreakdownText(rec.aging, GPR_AGING_BUCKETS),
+                pmCompliancePct,
+                vrCompliancePct,
+                dwellText: `Over: ${rec.overDwell} | Missing reason: ${rec.missingDwellReason}`
+            });
+        });
+        if (opts.onlyVendedLocations) branches = branches.filter(r => r.customer !== 'GARDA' || gprIsGardaBranch(r.branch));
+        const statusFilter = opts.status || 'ALL';
+        if (statusFilter === 'OVERDUE') branches = branches.filter(r => r.overDwell > 0);
+        if (statusFilter === 'MISSING_REASON') branches = branches.filter(r => r.missingDwellReason > 0);
+        if (statusFilter === 'HAS_REASON') branches = branches.filter(r => r.overDwell > 0 && r.missingDwellReason === 0);
+        branches.sort((a,b) => String(a.customer).localeCompare(String(b.customer)) || String(a.region).localeCompare(String(b.region)) || String(a.subregion).localeCompare(String(b.subregion)) || String(a.branch).localeCompare(String(b.branch)));
+        detailRows.sort((a,b) => String(a.customer).localeCompare(String(b.customer)) || String(a.branch).localeCompare(String(b.branch)) || String(a.unitNo).localeCompare(String(b.unitNo)) || String(a.roNum).localeCompare(String(b.roNum)));
+        return { branches, detailRows };
+    }
+    function gprSnapshotFromModel(model) {
+        const branches = (model && model.branches || []).filter(r => r.customer === 'GARDA');
+        const grand = window.oscGardaDailyGrandMetrics || {};
+        const uniqueVendors = new Set();
+        const ecd = gprEmptyBuckets(GPR_ECD_BUCKETS);
+        const aging = gprEmptyBuckets(GPR_AGING_BUCKETS);
+        let oos = 0, totalUnits = 0, openVros = 0, sitesUnder100 = 0, pmTotal = 0, pmOk = 0, vrTotal = 0, vrOk = 0, overDwell = 0, missingDwell = 0;
+        branches.forEach(r => {
+            Array.from(r.vendors || []).forEach(v => uniqueVendors.add(v));
+            oos += Number(r.oosUnits || 0); totalUnits += Number(r.totalUnits || 0); openVros += Number(r.openVros || 0);
+            if (r.usefulPct !== null && !isNaN(Number(r.usefulPct)) && Number(r.usefulPct) < 100) sitesUnder100 += 1;
+            GPR_ECD_BUCKETS.forEach(k => ecd[k] += Number((r.ecdBuckets || {})[k] || 0));
+            GPR_AGING_BUCKETS.forEach(k => aging[k] += Number((r.aging || {})[k] || 0));
+            pmTotal += Number(r.pmDwellTotal || 0); pmOk += Number(r.pmDwellOk || 0);
+            vrTotal += Number(r.vrDwellTotal || 0); vrOk += Number(r.vrDwellOk || 0);
+            overDwell += Number(r.overDwell || 0); missingDwell += Number(r.missingDwellReason || 0);
+        });
+        let usefulPct = grand.usefulPct !== null && grand.usefulPct !== undefined && !isNaN(Number(grand.usefulPct)) ? Number(grand.usefulPct) : null;
+        if (usefulPct === null) {
+            const vals = branches.map(r => Number(r.usefulPct)).filter(v => !isNaN(v));
+            usefulPct = vals.length ? vals.reduce((a,b)=>a+b,0) / vals.length : null;
+        }
+        return {
+            dateKey: gprDateKey(), customer:'GARDA', usefulPct,
+            oosUnits: grand.oosUnits || oos, totalUnits: grand.totalUnits || totalUnits, sitesUnder100,
+            openVros, uniqueVendorCount: uniqueVendors.size, ecdBuckets: ecd, agingBuckets: aging,
+            pmDwellCompliancePct: pmTotal ? (pmOk / pmTotal) * 100 : null, pmOpenVros: pmTotal,
+            vrDwellCompliancePct: vrTotal ? (vrOk / vrTotal) * 100 : null, vrOpenVros: vrTotal,
+            overDwell, missingDwellReasons: missingDwell, workbookFingerprint: window.currentWorkbookFingerprint || currentWorkbookFingerprint || '', savedAt: new Date().toISOString()
+        };
+    }
+    function gprDeltaText(current, previous, suffix) {
+        if (current === null || current === undefined || isNaN(Number(current))) return 'N/A';
+        if (!previous || previous === null || previous === undefined || isNaN(Number(previous))) return `${gprPct(current)} today`;
+        const diff = Number(current) - Number(previous);
+        if (Math.abs(diff) < 0.05) return `${gprPct(current)} today, flat vs prior snapshot`;
+        return `${gprPct(current)} today, ${diff > 0 ? 'up' : 'down'} ${Math.abs(diff).toFixed(1)} pts vs prior snapshot`;
+    }
+    function gprSnapshotNarrative(snap, prev) {
+        if (!snap) return 'Garda Flash will populate after OSC+ data is processed.';
+        const eTotal = gprBucketTotal(snap.ecdBuckets, GPR_ECD_BUCKETS);
+        const ecdParts = GPR_ECD_BUCKETS.map(k => `${eTotal ? Math.round((Number(snap.ecdBuckets[k] || 0) / eTotal) * 100) : 0}% ${k.toLowerCase()}`).join(', ');
+        const usefulSentence = prev && prev.usefulPct !== null && prev.usefulPct !== undefined
+            ? `Garda useful performance is ${gprDeltaText(snap.usefulPct, prev.usefulPct)}.`
+            : `Garda useful performance is ${gprPct(snap.usefulPct)} today; this is the baseline snapshot for day-over-day comparison.`;
+        const oosMove = prev && prev.oosUnits !== undefined ? ` (${Number(snap.oosUnits || 0) - Number(prev.oosUnits || 0) >= 0 ? '+' : ''}${Number(snap.oosUnits || 0) - Number(prev.oosUnits || 0)} vs prior snapshot)` : '';
+        const sitesMove = prev && prev.sitesUnder100 !== undefined ? ` (${Number(snap.sitesUnder100 || 0) - Number(prev.sitesUnder100 || 0) >= 0 ? '+' : ''}${Number(snap.sitesUnder100 || 0) - Number(prev.sitesUnder100 || 0)} vs prior snapshot)` : '';
+        const pmText = snap.pmDwellCompliancePct === null ? 'PM dwell compliance is not available from the current filter/source.' : `PM dwell compliance is ${gprPct(snap.pmDwellCompliancePct)} across ${snap.pmOpenVros} open PM items.`;
+        return `${usefulSentence} OOS stands at ${snap.oosUnits || 0} units${oosMove}, with ${snap.sitesUnder100 || 0} vended sites below 100% useful${sitesMove}. ECD breakdown: ${ecdParts}. Vendor coverage shows ${snap.uniqueVendorCount || 0} unique vendors historically used across Garda vended branches. ${pmText} Today’s focus is to clear past-due/missing ECDs, move aging VROs, and capture required dwell reasons where statuses exceed the agreed window.`;
+    }
+    async function gprLoadPriorGardaSnapshot(currentDateKey) {
+        try {
+            const ref = (typeof db !== 'undefined' && db) ? db.ref('performanceReportingLogs/garda') : (firebase && firebase.database ? firebase.database().ref('performanceReportingLogs/garda') : null);
+            if (!ref) return null;
+            const yKey = gprYesterdayKey(currentDateKey);
+            const snap = await ref.orderByKey().endAt(yKey).limitToLast(1).once('value');
+            const val = snap.val() || {};
+            const keys = Object.keys(val).sort();
+            return keys.length ? val[keys[keys.length - 1]] : null;
+        } catch(e) { console.warn('Garda prior performance snapshot load failed:', e); return null; }
+    }
+    async function gprSaveGardaSnapshot(snap) {
+        try {
+            const now = Date.now();
+            if (window.__oscGardaPerfLastSaveAt && now - window.__oscGardaPerfLastSaveAt < 120000) return;
+            window.__oscGardaPerfLastSaveAt = now;
+            const ref = (typeof db !== 'undefined' && db) ? db.ref(`performanceReportingLogs/garda/${snap.dateKey}`) : (firebase && firebase.database ? firebase.database().ref(`performanceReportingLogs/garda/${snap.dateKey}`) : null);
+            if (ref) await ref.set(snap);
+        } catch(e) { console.warn('Garda daily performance snapshot save failed:', e); }
+    }
+    function gprEnsureControls() {
+        const toolbar = document.querySelector('#performance-reporting-view .performance-reporting-toolbar');
+        if (!toolbar) return;
+        if (!document.getElementById('performance-customer-filter')) {
+            const field = document.createElement('div');
+            field.className = 'performance-reporting-field';
+            field.innerHTML = '<label for="performance-customer-filter">Customer</label><select id="performance-customer-filter" onchange="renderPerformanceReporting()"><option value="ALL">All Customers</option></select>';
+            toolbar.insertBefore(field, toolbar.firstChild);
+        }
+        const customerDd = document.getElementById('performance-customer-filter');
+        if (customerDd) {
+            const current = customerDd.value || 'ALL';
+            customerDd.innerHTML = '<option value="ALL">All Customers</option>' + GPR_ALLOWED_CUSTOMERS.map(c => `<option value="${gprEsc(c)}">${gprEsc(c)}</option>`).join('');
+            customerDd.value = GPR_ALLOWED_CUSTOMERS.includes(current) ? current : 'ALL';
+        }
+        if (!document.getElementById('performance-only-vended-locations')) {
+            const field = document.createElement('div');
+            field.className = 'performance-reporting-field performance-vended-toggle-field';
+            field.innerHTML = '<label>&nbsp;</label><label class="performance-ers-toggle"><input type="checkbox" id="performance-only-vended-locations" checked onchange="renderPerformanceReporting()"> Only Garda Vended Locations</label>';
+            const refreshBtn = toolbar.querySelector('button');
+            toolbar.insertBefore(field, refreshBtn || null);
+        }
+        if (!document.getElementById('performance-include-ers')) {
+            const field = document.createElement('div');
+            field.className = 'performance-reporting-field performance-ers-toggle-field';
+            field.innerHTML = '<label>&nbsp;</label><label class="performance-ers-toggle"><input type="checkbox" id="performance-include-ers" onchange="renderPerformanceReporting()"> Include ERS Data</label>';
+            const refreshBtn = toolbar.querySelector('button');
+            toolbar.insertBefore(field, refreshBtn || null);
+        }
+        const oldNarrative = document.getElementById('performance-garda-narrative');
+        if (oldNarrative && oldNarrative.parentNode) oldNarrative.parentNode.removeChild(oldNarrative);
+        const queueDd = document.getElementById('performance-queue-filter');
+        if (queueDd && !queueDd.multiple) { queueDd.multiple = true; queueDd.size = 4; }
+    }
+    function gprSetTableHeaders() {
+        const table = document.getElementById('performance-reporting-table');
+        if (!table) return;
+        table.innerHTML = `
+            <colgroup>
+                <col style="width:7%;"><col style="width:7%;"><col style="width:8%;"><col style="width:17%;"><col style="width:6%;"><col style="width:7%;"><col style="width:11%;"><col style="width:6%;"><col style="width:8%;"><col style="width:8%;"><col style="width:12%;"><col style="width:12%;"><col style="width:9%;">
+            </colgroup>
+            <thead><tr><th>Customer</th><th>Region</th><th>Subregion</th><th>Branch Location</th><th>OOS Units</th><th>Useful %</th><th>Historical Vendors Used</th><th>Open VROs</th><th>PM Dwell Compliance</th><th>VR Dwell Compliance</th><th>ECD Breakdown</th><th>Aging VRO Breakdown</th><th>Dwell Exceptions</th></tr></thead>
+            <tbody id="performance-reporting-body"><tr><td colspan="13"><div class="compliance-reporting-message">Performance Reporting will load after OSC+ data is processed.</div></td></tr></tbody>`;
+    }
+    function gprRenderSummaryCards(model) {
+        const summary = document.getElementById('performance-reporting-summary');
+        if (!summary) return;
+        const snap = gprSnapshotFromModel(model);
+        const lateMissing = Number((snap.ecdBuckets || {})['Past Due'] || 0) + Number((snap.ecdBuckets || {})['Missing'] || 0);
+        summary.innerHTML = `
+            <div class="performance-kpi-card"><div class="label">Garda Useful %</div><div class="value">${gprPct(snap.usefulPct)}</div></div>
+            <div class="performance-kpi-card"><div class="label">Garda OOS Units</div><div class="value">${snap.oosUnits || 0}</div></div>
+            <div class="performance-kpi-card"><div class="label">Sites Under 100% Useful</div><div class="value">${snap.sitesUnder100 || 0}</div></div>
+            <div class="performance-kpi-card"><div class="label">Historical Vendors Used</div><div class="value">${snap.uniqueVendorCount || 0}</div></div>
+            <div class="performance-kpi-card"><div class="label">Past-Due / Missing ECD</div><div class="value" style="color:#dc2626;">${lateMissing}</div></div>
+            <div class="performance-kpi-card"><div class="label">PM Dwell Compliance</div><div class="value">${gprPct(snap.pmDwellCompliancePct)}</div></div>
+            <div class="performance-kpi-card"><div class="label">VR Dwell Compliance</div><div class="value">${gprPct(snap.vrDwellCompliancePct)}</div></div>`;
+        try { gprSaveGardaSnapshot(snap); } catch(e) {}
+    }
+
+    window.renderPerformanceReporting = function() {
+        gprEnsureControls();
+        gprSetTableHeaders();
+        const body = document.getElementById('performance-reporting-body');
+        if (!body) return;
+        const model = gprBuildModel();
+        gprRenderSummaryCards(gprBuildModel({ customer:'GARDA', includeErs:false, queue:['ALL'], status:'ALL' }));
+        if (!model.branches.length) {
+            body.innerHTML = '<tr><td colspan="13"><div class="compliance-reporting-message">No Performance Reporting rows match the current filters.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = model.branches.map(r => `
+            <tr>
+                <td>${gprEsc(r.customer)}</td>
+                <td>${gprEsc(r.region || '')}</td>
+                <td>${gprEsc(r.subregion || '')}</td>
+                <td><strong>${gprEsc(r.branch)}</strong></td>
+                <td>${Number(r.oosUnits || 0)}</td>
+                <td>${r.customer === 'GARDA' ? gprEsc(gprPct(r.usefulPct)) : 'N/A'}</td>
+                <td><strong>${Number(r.vendorCount || 0)}</strong>${r.vendorList ? `<br><span class="performance-muted-text">${gprEsc(r.vendorList)}</span>` : ''}</td>
+                <td>${Number(r.openVros || 0)}</td>
+                <td>${r.pmCompliancePct === null ? 'N/A' : gprEsc(gprPct(r.pmCompliancePct))}</td>
+                <td>${r.vrCompliancePct === null ? 'N/A' : gprEsc(gprPct(r.vrCompliancePct))}</td>
+                <td>${gprEsc(r.ecdBreakdown)}</td>
+                <td>${gprEsc(r.agingBreakdown)}</td>
+                <td>${r.missingDwellReason ? `<span class="dwell-badge warn">${gprEsc(r.dwellText)}</span>` : `<span class="dwell-badge ok">${gprEsc(r.dwellText)}</span>`}</td>
+            </tr>`).join('');
+    };
+
+    function gprStyleSheet(ws, headerRows) {
+        if (!ws || !ws['!ref']) return;
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        const headerStyle = { font:{bold:true,color:{rgb:'FFFFFF'}}, fill:{patternType:'solid',fgColor:{rgb:'1F4E78'}}, alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        const titleStyle = { font:{bold:true,color:{rgb:'1F4E78'}, sz:14}, alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        const bodyStyle = { alignment:{horizontal:'left',vertical:'top',wrapText:true} };
+        for (let R = 0; R <= range.e.r; R++) {
+            for (let C = 0; C <= range.e.c; C++) {
+                const ref = XLSX.utils.encode_cell({r:R,c:C});
+                if (!ws[ref]) continue;
+                if (headerRows.has(R)) ws[ref].s = headerStyle;
+                else if (C === 0 && String(ws[ref].v || '').match(/Reporting|Detail|Flash|Breakdown/i)) ws[ref].s = titleStyle;
+                else ws[ref].s = bodyStyle;
+            }
+        }
+        ws['!cols'] = [{wch:18},{wch:16},{wch:18},{wch:34},{wch:11},{wch:10},{wch:16},{wch:48},{wch:10},{wch:12},{wch:16},{wch:18},{wch:38},{wch:38},{wch:14},{wch:16},{wch:18},{wch:24},{wch:18}];
+    }
+    function gprSheetName(base, used) { let name = String(base || 'Sheet').replace(/[\\/?*\[\]:]/g,' ').trim() || 'Sheet'; name = name.slice(0,31); let finalName = name, i = 2; while (used.has(finalName)) { const suffix = ` ${i++}`; finalName = name.slice(0,31-suffix.length)+suffix; } used.add(finalName); return finalName; }
+
+    window.exportPerformanceReportingToExcel = function() {
+        const opts = { customer:gprSelectedCustomer(), includeErs:gprIncludeErs(), queue:gprQueueFilter(), status:gprStatusFilter(), onlyVendedLocations:gprOnlyVendedLocations() };
+        const model = gprBuildModel(opts);
+        const gardaModel = gprBuildModel({ customer:'GARDA', includeErs:false, queue:['ALL'], status:'ALL', onlyVendedLocations:opts.onlyVendedLocations });
+        const snap = gprSnapshotFromModel(gardaModel);
+        const exportDate = gprDateKey();
+        const includeErsText = opts.includeErs ? 'YES' : 'NO';
+        const wb = XLSX.utils.book_new();
+        const used = new Set();
+
+        const flashAoa = [
+            ['Garda Daily Flash', '', '', ''],
+            ['Report Date', exportDate, 'ERS Included', 'NO'],
+            ['Only Garda Vended Locations', opts.onlyVendedLocations ? 'YES' : 'NO', '', ''],
+            ['Useful % Today', gprPct(snap.usefulPct), 'OOS Units', snap.oosUnits || 0],
+            ['Sites Under 100% Useful', snap.sitesUnder100 || 0, 'Historical Vendors Used', snap.uniqueVendorCount || 0],
+            ['PM Dwell Compliance', gprPct(snap.pmDwellCompliancePct), 'Open PM Items', snap.pmOpenVros || 0],
+            ['VR Dwell Compliance', gprPct(snap.vrDwellCompliancePct), 'Open VR Items', snap.vrOpenVros || 0],
+            [],
+            ['ECD Breakdown', 'Count', '% of ECDs'],
+            ...GPR_ECD_BUCKETS.map(k => [k, Number((snap.ecdBuckets || {})[k] || 0), gprBucketTotal(snap.ecdBuckets, GPR_ECD_BUCKETS) ? Math.round((Number((snap.ecdBuckets || {})[k] || 0) / gprBucketTotal(snap.ecdBuckets, GPR_ECD_BUCKETS)) * 100) + '%' : '0%']),
+            [],
+            ['Aging VRO Breakdown', 'Count', '% of Open VROs'],
+            ...GPR_AGING_BUCKETS.map(k => [k, Number((snap.agingBuckets || {})[k] || 0), gprBucketTotal(snap.agingBuckets, GPR_AGING_BUCKETS) ? Math.round((Number((snap.agingBuckets || {})[k] || 0) / gprBucketTotal(snap.agingBuckets, GPR_AGING_BUCKETS)) * 100) + '%' : '0%'])
+        ];
+        const wsFlash = XLSX.utils.aoa_to_sheet(flashAoa);
+        gprStyleSheet(wsFlash, new Set([8, 8 + GPR_ECD_BUCKETS.length + 2]));
+        XLSX.utils.book_append_sheet(wb, wsFlash, gprSheetName('Garda Flash', used));
+
+        const overviewRows = model.branches.map(r => ({
+            'Report Date': exportDate, 'Customer': r.customer, 'Region': r.region || '', 'Subregion': r.subregion || '', 'Branch Location': r.branch,
+            'OOS Units': Number(r.oosUnits || 0), 'Total Units': Number(r.totalUnits || 0), 'Useful %': r.customer === 'GARDA' ? gprPct(r.usefulPct) : 'N/A',
+            'Historical Vendors Used': Number(r.vendorCount || 0), 'Vendor List': r.vendorList || '', 'Open VROs': Number(r.openVros || 0),
+            'PM Dwell Compliance': r.pmCompliancePct === null ? 'N/A' : gprPct(r.pmCompliancePct),
+            'VR Dwell Compliance': r.vrCompliancePct === null ? 'N/A' : gprPct(r.vrCompliancePct),
+            'ECD Breakdown': r.ecdBreakdown, 'Aging VRO Breakdown': r.agingBreakdown, 'Over Dwell': Number(r.overDwell || 0), 'Missing Dwell Reason': Number(r.missingDwellReason || 0), 'ERS Included': includeErsText, 'Only Garda Vended Locations': opts.onlyVendedLocations ? 'YES' : 'NO'
+        }));
+        const wsOverview = XLSX.utils.json_to_sheet(overviewRows.length ? overviewRows : [{'Report Date': exportDate, 'Customer':'No rows matched filters'}]);
+        try { styleExcelHeaders(wsOverview); autoFitColumns(wsOverview, overviewRows); } catch(e) {}
+        XLSX.utils.book_append_sheet(wb, wsOverview, gprSheetName('Overview', used));
+
+        const customers = Array.from(new Set(model.branches.map(r => r.customer))).sort();
+        customers.forEach(customer => {
+            const branches = model.branches.filter(r => r.customer === customer);
+            const details = model.detailRows.filter(r => r.customer === customer);
+            const aoa = [];
+            const headerRows = new Set();
+            aoa.push([`${customer} Daily Performance Reporting`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            headerRows.add(1);
+            aoa.push(['Report Date','Customer','Region','Subregion','Branch Location','OOS Units','Total Units','Useful %','Historical Vendors Used','Vendor List','# Open VROs','PM Dwell Compliance','VR Dwell Compliance','ECD Breakdown','Aging VRO Breakdown','Over Dwell','Missing Dwell Reason','ERS Included','Only Garda Vended Locations']);
+            branches.forEach(r => aoa.push([exportDate, r.customer, r.region || '', r.subregion || '', r.branch, Number(r.oosUnits || 0), Number(r.totalUnits || 0), r.customer === 'GARDA' ? gprPct(r.usefulPct) : 'N/A', Number(r.vendorCount || 0), r.vendorList || '', Number(r.openVros || 0), r.pmCompliancePct === null ? 'N/A' : gprPct(r.pmCompliancePct), r.vrCompliancePct === null ? 'N/A' : gprPct(r.vrCompliancePct), r.ecdBreakdown, r.agingBreakdown, Number(r.overDwell || 0), Number(r.missingDwellReason || 0), includeErsText, opts.onlyVendedLocations ? 'YES' : 'NO']));
+            aoa.push([]);
+            aoa.push([`${customer} Open VRO Detail`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            const detailHeaderRow = aoa.length;
+            headerRows.add(detailHeaderRow);
+            aoa.push(['Customer','Branch Location','Unit','VRO','Status','Opened Date','ECD','ECD Bucket','Vendor','Coordinator','Queue','Aging Bucket','Aging Days','Dwell Exceeded','Dwell Reason','Spend','ERS Included']);
+            details.forEach(d => aoa.push([d.customer, d.branch, d.unitNo, d.roNum, d.status, d.opened, d.ecd, d.ecdBucket, d.vendor, d.coordinator, d.queue, d.agingBucket, d.agingDays, d.dwellExceeded, d.dwellReason || '', d.spend || 0, includeErsText]));
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            gprStyleSheet(ws, headerRows);
+            XLSX.utils.book_append_sheet(wb, ws, gprSheetName(customer, used));
+        });
+        XLSX.writeFile(wb, `OSC_Performance_Reporting_${exportDate}.xlsx`);
+    };
+
+    const priorProcessExcelDataGardaDailyFlash = typeof processExcelData === 'function' ? processExcelData : null;
+    if (priorProcessExcelDataGardaDailyFlash) {
+        processExcelData = function(vroRaw, roDetailRaw, resourceRawAOA, oosRawAOA, usefulRawAOA, dodRawAOA, repClassRawAOA, customerAidRawAOA) {
+            window.oscPerfRoDetailRawAOA = roDetailRaw || [];
+            window.oscPerfOosRawAOA = oosRawAOA || [];
+            window.oscPerfUsefulRawAOA = usefulRawAOA || [];
+            const result = priorProcessExcelDataGardaDailyFlash.apply(this, arguments);
+            try { setTimeout(() => { if (typeof renderPerformanceReporting === 'function') renderPerformanceReporting(); }, 1300); } catch(e) {}
+            return result;
+        };
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .performance-reporting-table { min-width: 2050px !important; table-layout: fixed; }
+        .performance-reporting-table th { background:#1F4E78; color:#fff; border-bottom:2px solid #17365d; padding:8px 6px; font-size:10px; line-height:1.15; text-align:left; vertical-align:middle; white-space:normal; }
+        .performance-reporting-table td { font-size:12px; padding:10px 8px; text-align:left; vertical-align:top; }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('DOMContentLoaded', () => { try { gprEnsureControls(); gprSetTableHeaders(); } catch(e) {} });
 })();
 </script>
 
